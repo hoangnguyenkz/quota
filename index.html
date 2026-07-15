@@ -3,1372 +3,1561 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TID · Tạo Báo Giá AI</title>
+<title>Theo Dõi Hàng Hóa Dự Án — TID CO.,LTD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
-
-  :root {
-    --bg: #0a0e1a;
-    --surface: #111827;
-    --surface2: #1a2234;
-    --border: #1e2d45;
-    --accent: #00d4ff;
-    --accent2: #0088cc;
-    --gold: #f0a500;
-    --text: #e8edf5;
-    --muted: #6b7fa3;
-    --danger: #ff4d6d;
-    --success: #00e5a0;
-    --radius: 12px;
+  :root{
+    --navy-900:#0F2A43;
+    --navy-800:#16385A;
+    --navy-700:#1B3A5C;
+    --steel-500:#5A7186;
+    --steel-300:#9AAAB8;
+    --paper-50:#F7F6F2;
+    --paper-100:#EDEBE2;
+    --paper-200:#E2DFD3;
+    --ink-900:#152431;
+    --ink-600:#425264;
+    --orange-600:#E2570C;
+    --orange-700:#C4480A;
+    --amber-500:#C97A1D;
+    --green-600:#2F7A4D;
+    --green-100:#E1F0E5;
+    --red-600:#B23A2E;
+    --red-100:#F5E2DF;
+    --amber-100:#F5E9D6;
+    --steel-100:#E7EBEE;
+    --line:#D8D4C8;
+    --line-dark:#33465C;
+    --radius:3px;
+    --shadow-card:0 1px 2px rgba(15,42,67,0.08), 0 1px 1px rgba(15,42,67,0.04);
   }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'Be Vietnam Pro', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'IBM Plex Sans', sans-serif;
+    background:var(--paper-50);
+    color:var(--ink-900);
+    -webkit-font-smoothing:antialiased;
   }
+  h1,h2,h3,h4{font-family:'Oswald', sans-serif; font-weight:600; letter-spacing:0.02em; margin:0;}
+  .mono{font-family:'IBM Plex Mono', monospace;}
+  button{font-family:inherit; cursor:pointer;}
+  input,select,textarea{font-family:inherit;}
+  ::-webkit-scrollbar{width:10px; height:10px;}
+  ::-webkit-scrollbar-thumb{background:var(--steel-300); border-radius:6px;}
+  ::-webkit-scrollbar-track{background:transparent;}
 
-  body::before {
-    content: '';
-    position: fixed;
-    top: -50%;
-    left: -20%;
-    width: 600px;
-    height: 600px;
-    background: radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
+  /* ---------- Login ---------- */
+  #loginScreen{
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:
+      linear-gradient(var(--navy-900),var(--navy-900)),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.035) 0px, rgba(255,255,255,0.035) 1px, transparent 1px, transparent 24px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.035) 0px, rgba(255,255,255,0.035) 1px, transparent 1px, transparent 24px);
   }
-
-  body::after {
-    content: '';
-    position: fixed;
-    bottom: -30%;
-    right: -10%;
-    width: 500px;
-    height: 500px;
-    background: radial-gradient(circle, rgba(240,165,0,0.05) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
+  .login-card{
+    width:380px; background:var(--paper-50); border-radius:var(--radius);
+    box-shadow:0 20px 60px rgba(0,0,0,0.35); overflow:hidden;
+    border-top:4px solid var(--orange-600);
   }
-
-  .app { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 0 20px 40px; }
-
-  /* HEADER */
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 24px 0 20px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 28px;
+  .login-head{padding:28px 30px 18px;}
+  .login-head .eyebrow{font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:var(--steel-500); text-transform:uppercase;}
+  .login-head h1{font-size:22px; color:var(--navy-900); margin-top:6px; line-height:1.25;}
+  .login-body{padding:4px 30px 30px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:12px; color:var(--ink-600); margin-bottom:5px; font-weight:600; letter-spacing:0.01em;}
+  .field select, .field input{
+    width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:var(--radius);
+    background:#fff; font-size:14px; color:var(--ink-900);
   }
-
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+  .field select:focus, .field input:focus{outline:2px solid var(--orange-600); outline-offset:1px; border-color:var(--orange-600);}
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    padding:9px 16px; border-radius:var(--radius); border:1px solid transparent;
+    font-size:13.5px; font-weight:600; letter-spacing:0.01em; transition:filter .12s ease;
   }
+  .btn:focus-visible{outline:2px solid var(--orange-600); outline-offset:2px;}
+  .btn:active{filter:brightness(0.92);}
+  .btn-primary{background:var(--orange-600); color:#fff;}
+  .btn-primary:hover{background:var(--orange-700);}
+  .btn-dark{background:var(--navy-900); color:#fff;}
+  .btn-dark:hover{background:var(--navy-800);}
+  .btn-ghost{background:transparent; color:var(--navy-900); border-color:var(--line);}
+  .btn-ghost:hover{background:var(--paper-100);}
+  .btn-danger{background:transparent; color:var(--red-600); border-color:var(--red-100);}
+  .btn-danger:hover{background:var(--red-100);}
+  .btn-block{width:100%;}
+  .btn-sm{padding:5px 10px; font-size:12px;}
+  .btn[disabled]{opacity:0.45; cursor:not-allowed;}
+  .login-error{background:var(--red-100); color:var(--red-600); font-size:12.5px; padding:8px 10px; border-radius:var(--radius); margin-bottom:12px; display:none;}
+  .login-hint{font-size:11.5px; color:var(--steel-500); margin-top:14px; line-height:1.5;}
 
-  .logo-icon {
-    width: 42px;
-    height: 42px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 16px;
-    color: #000;
-    letter-spacing: -0.5px;
+  /* ---------- App shell ---------- */
+  #appShell{display:none; min-height:100vh; grid-template-rows:56px 1fr;}
+  #topbar{
+    grid-row:1; background:var(--navy-900); color:#fff; display:flex; align-items:center;
+    padding:0 18px; gap:16px; border-bottom:3px solid var(--orange-600); position:relative; z-index:20;
   }
-
-  .logo-text h1 { font-size: 18px; font-weight: 700; color: var(--text); }
-  .logo-text p { font-size: 12px; color: var(--muted); margin-top: 1px; }
-
-  .header-badge {
-    background: rgba(0,212,255,0.1);
-    border: 1px solid rgba(0,212,255,0.25);
-    color: var(--accent);
-    font-size: 11px;
-    padding: 5px 12px;
-    border-radius: 20px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
+  #topbar .brand{display:flex; align-items:center; gap:10px; margin-right:8px;}
+  #topbar .brand .mark{
+    width:30px; height:30px; border:2px solid var(--orange-600); border-radius:2px;
+    display:flex; align-items:center; justify-content:center; font-family:'Oswald'; font-weight:700; font-size:14px; color:var(--orange-600);
+    transform:rotate(-2deg);
   }
-
-  /* MAIN GRID */
-  .main-grid {
-    display: grid;
-    grid-template-columns: 1fr 380px;
-    gap: 20px;
+  #topbar .brand .title{font-size:15px; letter-spacing:0.03em; line-height:1.1;}
+  #topbar .brand .title small{display:block; font-family:'IBM Plex Mono'; font-size:10px; color:var(--steel-300); letter-spacing:0.08em; text-transform:uppercase; margin-top:2px;}
+  #topbar .spacer{flex:1;}
+  #topbar .user-chip{display:flex; align-items:center; gap:8px; font-size:13px;}
+  #topbar .role-badge{
+    font-family:'IBM Plex Mono'; font-size:10.5px; padding:3px 7px; border-radius:2px; letter-spacing:0.05em;
+    background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2);
   }
-
-  @media (max-width: 900px) {
-    .main-grid { grid-template-columns: 1fr; }
+  #topbar .icon-btn{
+    background:transparent; border:1px solid rgba(255,255,255,0.18); color:#fff; padding:6px 10px; border-radius:2px; font-size:12.5px;
+    display:flex; align-items:center; gap:6px;
   }
+  #topbar .icon-btn:hover{background:rgba(255,255,255,0.1);}
 
-  /* PANEL */
-  .panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
+  #layout{grid-row:2; display:grid; grid-template-columns:260px 1fr; min-height:0;}
+  #sidebar{
+    background:var(--navy-800); color:#fff; padding:16px 0 16px; overflow-y:auto; border-right:1px solid var(--line-dark);
   }
-
-  .panel-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: var(--surface2);
+  #sidebar .side-head{display:flex; align-items:center; justify-content:space-between; padding:0 16px 10px; }
+  #sidebar .side-head h2{font-size:12px; letter-spacing:0.1em; color:var(--steel-300); text-transform:uppercase;}
+  #sidebar .side-search{padding:0 16px 12px;}
+  #sidebar .side-search input{
+    width:100%; padding:7px 9px; font-size:12.5px; border-radius:2px; border:1px solid rgba(255,255,255,0.15);
+    background:rgba(255,255,255,0.06); color:#fff;
   }
-
-  .panel-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 15px;
+  #sidebar .side-search input::placeholder{color:var(--steel-300);}
+  .proj-item{
+    padding:10px 16px; cursor:pointer; border-left:3px solid transparent; font-size:13px;
+    border-bottom:1px solid rgba(255,255,255,0.06);
   }
+  .proj-item:hover{background:rgba(255,255,255,0.05);}
+  .proj-item.active{background:rgba(226,87,12,0.14); border-left-color:var(--orange-600);}
+  .proj-item .p-code{font-family:'IBM Plex Mono'; font-size:10.5px; color:var(--steel-300); letter-spacing:0.05em;}
+  .proj-item .p-name{margin-top:2px; font-weight:500; line-height:1.3;}
+  .proj-item .p-status{margin-top:5px; font-size:10.5px;}
+  #sidebar .side-foot{padding:14px 16px 0;}
 
-  .icon-blue { background: rgba(0,212,255,0.15); }
-  .icon-gold { background: rgba(240,165,0,0.15); }
-  .icon-green { background: rgba(0,229,160,0.15); }
-
-  .panel-title { font-size: 14px; font-weight: 600; }
-  .panel-count {
-    margin-left: auto;
-    background: var(--border);
-    color: var(--muted);
-    font-size: 11px;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-family: 'JetBrains Mono', monospace;
+  #main{padding:20px 24px 40px; overflow-y:auto;}
+  .empty-state{
+    display:flex; flex-direction:column; align-items:flex-start; gap:10px; max-width:460px;
+    margin-top:60px; padding:26px; background:#fff; border:1px dashed var(--line); border-radius:var(--radius);
   }
+  .empty-state h3{font-size:18px; color:var(--navy-900);}
+  .empty-state p{margin:0; font-size:13.5px; color:var(--ink-600); line-height:1.6;}
 
-  /* UPLOAD ZONE */
-  .upload-zone {
-    margin: 20px;
-    border: 2px dashed var(--border);
-    border-radius: var(--radius);
-    padding: 30px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    position: relative;
+  .page-head{display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:16px; gap:16px;}
+  .page-head .titles{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;}
+  .page-head h1{font-size:21px; color:var(--navy-900);}
+  .page-head .p-code-tag{font-family:'IBM Plex Mono'; font-size:11.5px; color:var(--steel-500); border:1px solid var(--line); padding:2px 7px; border-radius:2px;}
+  .page-head .actions{display:flex; gap:8px; flex-shrink:0;}
+  .proj-meta{display:flex; gap:18px; margin-top:8px; flex-wrap:wrap;}
+  .proj-meta .m{font-size:12px; color:var(--ink-600);}
+  .proj-meta .m b{color:var(--navy-900); font-family:'IBM Plex Mono'; font-weight:600;}
+
+  .stat-row{display:flex; gap:12px; margin-bottom:18px; flex-wrap:wrap;}
+  .stat-card{
+    background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:12px 16px; min-width:150px;
+    box-shadow:var(--shadow-card);
   }
+  .stat-card .lbl{font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--steel-500); font-family:'IBM Plex Mono';}
+  .stat-card .val{font-family:'IBM Plex Mono'; font-size:20px; font-weight:600; color:var(--navy-900); margin-top:4px;}
 
-  .upload-zone:hover, .upload-zone.drag-over {
-    border-color: var(--accent);
-    background: rgba(0,212,255,0.04);
+  .filter-bar{display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:12px 14px; margin-bottom:12px; box-shadow:var(--shadow-card);}
+  .filter-bar .field{margin-bottom:0;}
+  .filter-bar .field label{font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em; font-family:'IBM Plex Mono'; color:var(--steel-500);}
+  .filter-result-count{font-size:11.5px; color:var(--steel-500); margin-bottom:6px; font-family:'IBM Plex Mono';}
+
+  table.data-table{width:100%; border-collapse:collapse; background:#fff; box-shadow:var(--shadow-card); border-radius:var(--radius); overflow:hidden;}
+  table.data-table thead th{
+    background:var(--navy-900); color:#fff; text-align:left; padding:9px 10px; font-size:10.5px;
+    letter-spacing:0.06em; text-transform:uppercase; font-family:'IBM Plex Mono'; font-weight:500; white-space:nowrap;
   }
-
-  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-  .upload-zone .upload-icon { font-size: 36px; margin-bottom: 10px; }
-  .upload-zone h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
-  .upload-zone p { font-size: 12px; color: var(--muted); }
-
-  .upload-success {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: rgba(0,229,160,0.08);
-    border: 1px solid rgba(0,229,160,0.2);
-    border-radius: var(--radius);
-    padding: 14px 16px;
-    margin: 20px;
+  table.data-table tbody td{
+    padding:9px 10px; border-bottom:1px solid var(--paper-200); font-size:13px; vertical-align:middle;
   }
+  table.data-table tbody tr:hover{background:var(--paper-50);}
+  table.data-table td.num, table.data-table th.num{text-align:right; font-family:'IBM Plex Mono';}
+  table.data-table td.center{text-align:center;}
+  .row-code{font-family:'IBM Plex Mono'; font-size:12px; color:var(--ink-600);}
+  .row-name{font-weight:600; color:var(--navy-900);}
+  .row-spec{font-size:11.5px; color:var(--steel-500); margin-top:2px;}
 
-  .upload-success .icon { font-size: 24px; }
-  .upload-success h4 { font-size: 13px; font-weight: 600; color: var(--success); }
-  .upload-success p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .gauge{width:110px; height:8px; background:var(--paper-200); border-radius:4px; overflow:hidden; position:relative; border:1px solid var(--line);}
+  .gauge .fill{height:100%; background:var(--green-600);}
+  .gauge.over .fill{background:var(--red-600);}
+  .gauge-lbl{font-family:'IBM Plex Mono'; font-size:10.5px; color:var(--steel-500); margin-top:3px;}
 
-  /* AI CHAT */
-  .chat-area { padding: 20px; }
-
-  .chat-label {
-    font-size: 12px;
-    color: var(--muted);
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    margin-bottom: 10px;
+  .stamp{
+    display:inline-block; font-family:'IBM Plex Mono'; font-size:10px; letter-spacing:0.04em; text-transform:uppercase;
+    padding:3px 8px; border-radius:2px; border:1.5px dashed; transform:rotate(-2deg); font-weight:600; white-space:nowrap;
   }
+  .stamp-grey{color:var(--steel-500); border-color:var(--steel-300); background:var(--steel-100);}
+  .stamp-amber{color:var(--amber-500); border-color:var(--amber-500); background:var(--amber-100);}
+  .stamp-blue{color:var(--navy-700); border-color:var(--navy-700); background:var(--steel-100);}
+  .stamp-green{color:var(--green-600); border-color:var(--green-600); background:var(--green-100);}
+  .stamp-red{color:var(--red-600); border-color:var(--red-600); background:var(--red-100);}
 
-  .input-wrapper {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    transition: border-color 0.2s;
-    overflow: hidden;
+  .row-actions{display:flex; gap:5px; white-space:nowrap;}
+  .icon-link{background:transparent; border:1px solid var(--line); color:var(--navy-900); padding:4px 8px; border-radius:2px; font-size:11.5px;}
+  .icon-link:hover{background:var(--paper-100);}
+
+  /* ---------- Modals ---------- */
+  .overlay{
+    display:none; position:fixed; inset:0; background:rgba(15,36,49,0.55); z-index:100;
+    align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto;
   }
-
-  .input-wrapper:focus-within { border-color: var(--accent); }
-
-  textarea {
-    width: 100%;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: var(--text);
-    font-family: 'Be Vietnam Pro', sans-serif;
-    font-size: 14px;
-    padding: 14px 16px;
-    resize: none;
-    min-height: 90px;
-    line-height: 1.6;
+  .overlay.show{display:flex;}
+  .modal{
+    background:#fff; width:100%; max-width:560px; border-radius:var(--radius); box-shadow:0 20px 60px rgba(0,0,0,0.3);
+    border-top:4px solid var(--orange-600);
   }
-
-  textarea::placeholder { color: var(--muted); }
-
-  .input-actions {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 14px;
-    border-top: 1px solid var(--border);
+  .modal.wide{max-width:820px;}
+  .modal-head{display:flex; align-items:center; justify-content:space-between; padding:18px 22px; border-bottom:1px solid var(--line);}
+  .modal-head h2{font-size:17px; color:var(--navy-900);}
+  .modal-close{background:transparent; border:none; font-size:20px; color:var(--steel-500); line-height:1;}
+  .modal-body{padding:20px 22px; max-height:70vh; overflow-y:auto;}
+  .modal-foot{display:flex; justify-content:flex-end; gap:8px; padding:16px 22px; border-top:1px solid var(--line);}
+  .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  .grid-3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px;}
+  textarea{resize:vertical; min-height:60px;}
+  .subhead{font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--steel-500); font-family:'IBM Plex Mono'; margin:18px 0 8px; padding-top:14px; border-top:1px solid var(--paper-200);}
+  .subhead:first-child{margin-top:0; padding-top:0; border-top:none;}
+  .mini-table{width:100%; border-collapse:collapse; margin-bottom:10px;}
+  .mini-table th{background:var(--paper-100); font-size:10.5px; text-transform:uppercase; letter-spacing:0.05em; font-family:'IBM Plex Mono'; padding:6px 8px; text-align:left; color:var(--ink-600);}
+  .mini-table td{padding:6px 8px; border-bottom:1px solid var(--paper-200); font-size:12.5px;}
+  .mini-table td.num{text-align:right; font-family:'IBM Plex Mono';}
+  .inline-form{display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; background:var(--paper-50); padding:10px; border-radius:2px; border:1px solid var(--paper-200);}
+  .inline-form .field{margin-bottom:0; flex:1; min-width:100px;}
+  .permission-note{font-size:11.5px; color:var(--steel-500); background:var(--paper-100); padding:8px 10px; border-radius:2px; margin-top:10px;}
+  .locked-field{background:var(--paper-100) !important; color:var(--steel-500);}
+  .role-table{width:100%; border-collapse:collapse; margin-top:8px;}
+  .role-table th, .role-table td{padding:7px 8px; border-bottom:1px solid var(--paper-200); font-size:12.5px; text-align:left;}
+  .role-table th{background:var(--paper-100); font-family:'IBM Plex Mono'; font-size:10.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-600);}
+  .code-box{
+    background:var(--navy-900); color:#d7e2ec; font-family:'IBM Plex Mono'; font-size:11.5px; padding:14px;
+    border-radius:2px; max-height:260px; overflow:auto; white-space:pre; line-height:1.55;
   }
-
-  .input-hints { font-size: 11px; color: var(--muted); }
-
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 9px 18px;
-    border: none;
-    border-radius: 8px;
-    font-family: 'Be Vietnam Pro', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
+  .toast{
+    position:fixed; bottom:20px; right:20px; background:var(--navy-900); color:#fff; padding:11px 18px; border-radius:2px;
+    font-size:13px; box-shadow:0 8px 24px rgba(0,0,0,0.25); z-index:300; display:flex; align-items:center; gap:10px;
+    border-left:4px solid var(--orange-600); transition:opacity .25s ease, transform .25s ease;
   }
-
-  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  .btn-primary {
-    background: var(--accent);
-    color: #000;
+  .toast.error{border-left-color:var(--red-600);}
+  .badge-count{
+    font-family:'IBM Plex Mono'; font-size:10px; background:var(--orange-600); color:#fff; padding:1px 6px; border-radius:10px; margin-left:6px;
   }
-
-  .btn-primary:hover:not(:disabled) {
-    background: #33ddff;
-    transform: translateY(-1px);
+  @media (max-width:880px){
+    #layout{grid-template-columns:1fr;}
+    #sidebar{display:none;}
+    .grid-2, .grid-3{grid-template-columns:1fr;}
   }
-
-  .btn-ghost {
-    background: var(--surface2);
-    color: var(--muted);
-    border: 1px solid var(--border);
-  }
-
-  .btn-ghost:hover:not(:disabled) { color: var(--text); border-color: var(--muted); }
-
-  .btn-danger { background: rgba(255,77,109,0.15); color: var(--danger); border: 1px solid rgba(255,77,109,0.3); }
-  .btn-success { background: var(--success); color: #000; }
-  .btn-success:hover:not(:disabled) { background: #00ffb3; transform: translateY(-1px); }
-
-  /* QUICK PROMPTS */
-  .quick-prompts {
-    margin: 0 20px 20px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .chip {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--muted);
-    font-size: 11px;
-    padding: 5px 12px;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.15s;
-    font-family: 'Be Vietnam Pro', sans-serif;
-  }
-
-  .chip:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.06); }
-
-  /* AI THINKING */
-  .ai-thinking {
-    display: none;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 20px;
-    background: rgba(0,212,255,0.05);
-    border-top: 1px solid var(--border);
-  }
-
-  .ai-thinking.active { display: flex; }
-
-  .thinking-dots {
-    display: flex;
-    gap: 4px;
-  }
-
-  .thinking-dots span {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--accent);
-    animation: bounce 1.2s infinite;
-  }
-
-  .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
-  .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
-
-  @keyframes bounce {
-    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
-    40% { transform: scale(1); opacity: 1; }
-  }
-
-  .thinking-text { font-size: 13px; color: var(--accent); font-weight: 500; }
-
-  /* QUOTATION TABLE */
-  .quote-container { padding: 0; }
-
-  .quote-empty {
-    padding: 50px 20px;
-    text-align: center;
-    color: var(--muted);
-  }
-
-  .quote-empty .empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
-  .quote-empty p { font-size: 13px; }
-
-  .quote-table-wrapper { overflow-x: auto; }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-  }
-
-  th {
-    background: var(--surface2);
-    padding: 10px 12px;
-    text-align: left;
-    font-weight: 600;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--muted);
-    white-space: nowrap;
-  }
-
-  td {
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--border);
-    vertical-align: middle;
-  }
-
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: rgba(255,255,255,0.02); }
-
-  .stt-cell {
-    color: var(--muted);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    width: 36px;
-  }
-
-  .product-cell { min-width: 220px; }
-
-  .product-name { font-weight: 500; color: var(--text); line-height: 1.4; }
-  .product-cat { font-size: 11px; color: var(--muted); margin-top: 2px; }
-
-  .qty-cell { width: 100px; }
-
-  .qty-input {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-    font-weight: 600;
-    text-align: center;
-    width: 70px;
-    padding: 5px 8px;
-    border-radius: 6px;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-
-  .qty-input:focus { border-color: var(--accent); }
-
-  .price-cell {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    color: var(--muted);
-    text-align: right;
-    white-space: nowrap;
-  }
-
-  .total-cell {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--accent);
-    text-align: right;
-    white-space: nowrap;
-  }
-
-  .del-cell { width: 36px; text-align: center; }
-
-  .del-btn {
-    background: none;
-    border: none;
-    color: var(--border);
-    cursor: pointer;
-    font-size: 16px;
-    padding: 2px;
-    border-radius: 4px;
-    transition: color 0.15s;
-  }
-
-  .del-btn:hover { color: var(--danger); }
-
-  .note-cell { min-width: 130px; }
-
-  .note-input {
-    background: transparent;
-    border: none;
-    border-bottom: 1px dashed var(--border);
-    color: var(--muted);
-    font-family: 'Be Vietnam Pro', sans-serif;
-    font-size: 12px;
-    width: 100%;
-    padding: 3px 0;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-
-  .note-input:focus { border-bottom-color: var(--accent); color: var(--text); }
-  .note-input::placeholder { color: var(--border); }
-
-  /* SUMMARY ROW */
-  .summary-row td {
-    background: var(--surface2);
-    border-top: 2px solid var(--border);
-    padding: 12px;
-  }
-
-  .grand-total {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--gold);
-    font-family: 'JetBrains Mono', monospace;
-  }
-
-  /* RIGHT PANEL */
-  .right-panel { display: flex; flex-direction: column; gap: 16px; }
-
-  /* QUOTE INFO FORM */
-  .form-group { padding: 16px 20px; }
-  .form-group + .form-group { border-top: 1px solid var(--border); }
-
-  .form-label {
-    font-size: 11px;
-    color: var(--muted);
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-    display: block;
-  }
-
-  .form-input {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: 'Be Vietnam Pro', sans-serif;
-    font-size: 13px;
-    padding: 9px 12px;
-    border-radius: 8px;
-    width: 100%;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-
-  .form-input:focus { border-color: var(--accent); }
-
-  /* DISCOUNT */
-  .discount-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .discount-row .form-input { flex: 1; }
-
-  .discount-preview {
-    font-size: 12px;
-    color: var(--muted);
-    margin-top: 6px;
-    font-family: 'JetBrains Mono', monospace;
-  }
-
-  /* STATS */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1px;
-    background: var(--border);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-    margin: 0 0 2px;
-  }
-
-  .stat-cell {
-    background: var(--surface);
-    padding: 14px 16px;
-  }
-
-  .stat-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
-  .stat-value { font-size: 16px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
-  .stat-value.accent { color: var(--accent); }
-  .stat-value.gold { color: var(--gold); }
-
-  /* ACTIONS */
-  .actions-panel { padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
-
-  /* VAT TOGGLE */
-  .vat-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 16px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    cursor: pointer;
-  }
-
-  .vat-label { font-size: 13px; font-weight: 500; }
-  .toggle-switch {
-    width: 38px;
-    height: 20px;
-    background: var(--border);
-    border-radius: 10px;
-    position: relative;
-    transition: background 0.2s;
-  }
-
-  .toggle-switch.on { background: var(--accent); }
-
-  .toggle-switch::after {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: white;
-    transition: left 0.2s;
-  }
-
-  .toggle-switch.on::after { left: 20px; }
-
-  /* AI SUGGESTION BADGE */
-  .ai-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 10px;
-    color: var(--accent);
-    background: rgba(0,212,255,0.1);
-    border: 1px solid rgba(0,212,255,0.2);
-    padding: 1px 7px;
-    border-radius: 10px;
-    font-weight: 600;
-  }
-
-  /* STATUS BAR */
-  .status-bar {
-    padding: 10px 20px;
-    font-size: 12px;
-    color: var(--muted);
-    border-top: 1px solid var(--border);
-    background: var(--surface2);
-    min-height: 38px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .status-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--success);
-    flex-shrink: 0;
-  }
-
-  .status-dot.loading { background: var(--accent); animation: pulse 1s infinite; }
-  .status-dot.error { background: var(--danger); }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-  }
-
-  /* PRINT STYLES */
-  @media print {
-    body { background: white; color: black; }
-    .no-print { display: none !important; }
-    .panel { border: 1px solid #ddd; }
-    header { border-bottom: 2px solid #333; }
-  }
-
-  /* SCROLLBAR */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: var(--surface); }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
-
-  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-  .tag { font-size: 11px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 3px 9px; color: var(--muted); }
 </style>
 </head>
 <body>
-<div class="app">
 
-  <header class="no-print">
-    <div class="logo">
-      <div class="logo-icon">TID</div>
-      <div class="logo-text">
-        <h1>Báo Giá Thông Minh</h1>
-        <p>Powered by AI · Tổng hợp ngành hàng TID</p>
-      </div>
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-head">
+      <div class="eyebrow">TID CO., LTD — Kho vận dự án</div>
+      <h1>Theo dõi hàng hóa &amp; tình trạng dự án</h1>
     </div>
-    <div class="header-badge">✦ AI ASSISTANT</div>
-  </header>
-
-  <div class="main-grid">
-
-    <!-- LEFT: Upload + AI Chat + Table -->
-    <div style="display:flex;flex-direction:column;gap:16px;">
-
-      <!-- Upload Panel -->
-      <div class="panel no-print" id="uploadPanel">
-        <div class="panel-header">
-          <div class="panel-icon icon-blue">📁</div>
-          <div class="panel-title">Tải bảng giá Excel</div>
-          <div class="panel-count" id="productCount">Chưa tải</div>
-        </div>
-        <div id="uploadZone" class="upload-zone">
-          <input type="file" id="fileInput" accept=".xlsx,.xls" />
-          <div class="upload-icon">📊</div>
-          <h3>Kéo thả hoặc click để tải file Excel</h3>
-          <p>Hỗ trợ file .xlsx · Bảng tổng hợp ngành hàng TID</p>
-        </div>
+    <div class="login-body">
+      <div class="login-error" id="loginError"></div>
+      <div class="field">
+        <label for="loginUser">Người dùng</label>
+        <select id="loginUser"></select>
       </div>
-
-      <!-- AI Chat Panel -->
-      <div class="panel no-print" id="chatPanel">
-        <div class="panel-header">
-          <div class="panel-icon icon-blue">🤖</div>
-          <div class="panel-title">Mô tả yêu cầu báo giá</div>
-        </div>
-
-        <div class="chat-area">
-          <div class="chat-label">Nhập yêu cầu bằng tiếng Việt tự nhiên</div>
-          <div class="input-wrapper">
-            <textarea id="promptInput" placeholder="VD: Cần báo giá hệ thống camera quan sát 20 camera IP Hikvision + 1 NVR 16 kênh cho văn phòng 3 tầng, kèm cáp mạng Cat6 và tủ mạng..." rows="3"></textarea>
-            <div class="input-actions">
-              <span class="input-hints">💡 AI sẽ tự tìm sản phẩm phù hợp từ bảng giá</span>
-              <button class="btn btn-primary" id="analyzeBtn" onclick="analyzeRequest()">
-                ✦ Phân tích & Tạo báo giá
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="quick-prompts">
-          <span class="chip" onclick="setPrompt(this)">📹 Hệ thống camera 20 mắt + NVR</span>
-          <span class="chip" onclick="setPrompt(this)">🔌 Cáp mạng Cat6 + phụ kiện cho 50 điểm</span>
-          <span class="chip" onclick="setPrompt(this)">🔒 Kiểm soát ra vào 3 cửa + chấm công</span>
-          <span class="chip" onclick="setPrompt(this)">⚡ UPS 3kVA + ắc quy dự phòng 4h</span>
-          <span class="chip" onclick="setPrompt(this)">🏢 Hệ thống báo cháy tòa nhà 10 tầng</span>
-          <span class="chip" onclick="setPrompt(this)">📡 Switch mạng 24 port + cáp quang backbone</span>
-        </div>
-
-        <div class="ai-thinking" id="thinkingBar">
-          <div class="thinking-dots">
-            <span></span><span></span><span></span>
-          </div>
-          <div class="thinking-text" id="thinkingText">AI đang phân tích yêu cầu...</div>
-        </div>
+      <div class="field">
+        <label for="loginPass">Mật khẩu</label>
+        <input type="password" id="loginPass" placeholder="Nhập mật khẩu">
       </div>
-
-      <!-- Quotation Table -->
-      <div class="panel" id="quotePanel">
-        <div class="panel-header">
-          <div class="panel-icon icon-gold">📋</div>
-          <div class="panel-title">Bảng báo giá</div>
-          <div id="itemCountBadge" class="panel-count">0 mục</div>
-          <button class="btn btn-ghost no-print" style="margin-left:8px;padding:5px 12px;font-size:12px;" onclick="addManualRow()">+ Thêm dòng</button>
-        </div>
-
-        <div id="quoteContainer" class="quote-container">
-          <div class="quote-empty">
-            <div class="empty-icon">🗂️</div>
-            <p>Tải file Excel và nhập yêu cầu<br>để AI tự động tạo báo giá</p>
-          </div>
-        </div>
-
-        <div class="status-bar" id="statusBar">
-          <div class="status-dot" id="statusDot"></div>
-          <span id="statusText">Sẵn sàng</span>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- RIGHT: Info + Actions -->
-    <div class="right-panel no-print">
-
-      <!-- Quote Info -->
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-icon icon-green">📝</div>
-          <div class="panel-title">Thông tin báo giá</div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Số báo giá</label>
-          <input class="form-input" id="quoteNo" placeholder="BG-2026-001" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Khách hàng</label>
-          <input class="form-input" id="custName" placeholder="Tên công ty / khách hàng" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Người liên hệ</label>
-          <input class="form-input" id="custContact" placeholder="Họ tên & SĐT" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Dự án / Địa điểm</label>
-          <input class="form-input" id="projectName" placeholder="Tên dự án hoặc địa chỉ" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Ngày báo giá</label>
-          <input class="form-input" type="date" id="quoteDate" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Hiệu lực</label>
-          <input class="form-input" id="validity" placeholder="30 ngày kể từ ngày báo giá" value="30 ngày kể từ ngày báo giá" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Điều khoản thanh toán</label>
-          <input class="form-input" id="paymentTerms" placeholder="T/T 100% khi giao hàng" value="T/T 100% khi giao hàng" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Chiết khấu (%)</label>
-          <div class="discount-row">
-            <input class="form-input" type="number" id="discountPct" min="0" max="100" step="0.5" value="0" onchange="recalcAll()" />
-            <span style="font-size:13px;color:var(--muted)">%</span>
-          </div>
-          <div class="discount-preview" id="discountPreview"></div>
-        </div>
-        <div class="form-group">
-          <div class="vat-toggle" onclick="toggleVAT()">
-            <span class="vat-label">Cộng VAT 10%</span>
-            <div class="toggle-switch" id="vatToggle"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Stats -->
-      <div class="stats-grid">
-        <div class="stat-cell">
-          <div class="stat-label">Số mục</div>
-          <div class="stat-value accent" id="statItems">0</div>
-        </div>
-        <div class="stat-cell">
-          <div class="stat-label">Tổng SL</div>
-          <div class="stat-value accent" id="statQty">0</div>
-        </div>
-        <div class="stat-cell">
-          <div class="stat-label">Chưa VAT</div>
-          <div class="stat-value" id="statSubtotal" style="font-size:12px;color:var(--muted)">0đ</div>
-        </div>
-        <div class="stat-cell">
-          <div class="stat-label">Thành tiền</div>
-          <div class="stat-value gold" id="statTotal" style="font-size:13px;">0đ</div>
-        </div>
-      </div>
-
-      <!-- Actions -->
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-icon icon-green">⚡</div>
-          <div class="panel-title">Xuất báo giá</div>
-        </div>
-        <div class="actions-panel">
-          <button class="btn btn-success" onclick="exportExcel()" style="justify-content:center;">
-            📊 Xuất file Excel (.xlsx)
-          </button>
-          <button class="btn btn-ghost" onclick="window.print()" style="justify-content:center;">
-            🖨️ In / Xuất PDF
-          </button>
-          <button class="btn btn-ghost" onclick="clearAll()" style="justify-content:center;color:var(--danger)">
-            🗑️ Xóa tất cả
-          </button>
-        </div>
-      </div>
-
+      <button class="btn btn-primary btn-block" onclick="handleLogin()">Đăng nhập</button>
+      <div class="login-hint">Tài khoản mẫu: <b>admin</b> / mật khẩu <b>admin123</b> (vai trò Admin). Vào mục Người dùng sau khi đăng nhập để thêm tài khoản Sales / Kế toán / Viewer.</div>
     </div>
   </div>
+</div>
 
+<!-- APP SHELL -->
+<div id="appShell">
+  <div id="topbar">
+    <div class="brand">
+      <div class="mark">TID</div>
+      <div class="title">THEO DÕI HÀNG HÓA DỰ ÁN<small>Goods &amp; Delivery Tracker</small></div>
+    </div>
+    <div class="spacer"></div>
+    <button class="icon-btn" onclick="openSyncModal()">⇅ Đồng bộ Google Sheets</button>
+    <button class="icon-btn" id="btnUsers" onclick="openUsersModal()" style="display:none;">👤 Người dùng</button>
+    <div class="user-chip">
+      <span id="topUserName"></span>
+      <span class="role-badge" id="topUserRole"></span>
+    </div>
+    <button class="icon-btn" onclick="handleLogout()">Đăng xuất</button>
+  </div>
+  <div id="layout">
+    <div id="sidebar">
+      <div class="side-head"><h2>Danh sách dự án</h2></div>
+      <div class="side-search"><input id="projSearch" placeholder="Tìm dự án..." oninput="renderProjectList()"></div>
+      <div id="projectList"></div>
+      <div class="side-foot" id="addProjectBtnWrap">
+        <button class="btn btn-dark btn-block btn-sm" onclick="openProjectModal()">+ Dự án mới</button>
+      </div>
+    </div>
+    <div id="main"></div>
+  </div>
+</div>
+
+<!-- PROJECT MODAL -->
+<div class="overlay" id="projectModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="projectModalTitle">Dự án mới</h2>
+      <button class="modal-close" onclick="closeModal('projectModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="pjId">
+      <div class="grid-2">
+        <div class="field"><label>Mã dự án</label><input id="pjCode" placeholder="VD: TID-2026-014"></div>
+        <div class="field"><label>Trạng thái dự án</label>
+          <select id="pjStatus">
+            <option>Đang triển khai</option>
+            <option>Tạm dừng</option>
+            <option>Hoàn thành</option>
+            <option>Đã hủy</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Tên dự án</label><input id="pjName" placeholder="Tên công trình / dự án"></div>
+      <div class="grid-2">
+        <div class="field"><label>Chủ đầu tư / Khách hàng</label><input id="pjClient" placeholder="Tên chủ đầu tư"></div>
+        <div class="field"><label>Hệ thống</label><input id="pjSystem" placeholder="VD: Hệ thống điện, Cấp thoát nước, PCCC, HVAC..."></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Tiến độ triển khai dự án</label>
+          <select id="pjProgress">
+            <option>Chưa khởi công</option>
+            <option>Đang thi công phần thô</option>
+            <option>Đang thi công hoàn thiện</option>
+            <option>Đang lắp đặt thiết bị</option>
+            <option>Nghiệm thu bàn giao</option>
+            <option>Đã hoàn thành</option>
+            <option>Chậm tiến độ</option>
+            <option>Tạm dừng thi công</option>
+          </select>
+        </div>
+        <div class="field"><label>% hoàn thành</label><input type="number" min="0" max="100" id="pjProgressPct" placeholder="0 - 100"></div>
+      </div>
+      <div class="field"><label>Ghi chú</label><textarea id="pjNote" placeholder="Ghi chú thêm về dự án"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('projectModal')">Hủy</button>
+      <button class="btn btn-primary" onclick="saveProject()">Lưu dự án</button>
+    </div>
+  </div>
+</div>
+
+<!-- ITEM MODAL -->
+<div class="overlay" id="itemModal">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h2 id="itemModalTitle">Hàng hóa mới</h2>
+      <button class="modal-close" onclick="closeModal('itemModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="itId">
+      <div class="subhead">Thông tin sản phẩm</div>
+      <div class="grid-3">
+        <div class="field"><label>Tên sản phẩm</label><input id="itName" placeholder="VD: Máy bơm ly tâm trục ngang"></div>
+        <div class="field"><label>Hệ thống</label><input id="itSystem" placeholder="VD: Hệ thống điện, PCCC, HVAC..."></div>
+        <div class="field"><label>Mã hàng</label><input id="itCode" placeholder="VD: PUMP-CN-050" class="mono"></div>
+      </div>
+      <div class="field"><label>Thông số kỹ thuật</label><textarea id="itSpec" placeholder="VD: Q=50m3/h, H=32m, 3-phase, 380V, IP55..."></textarea></div>
+      <div class="grid-2">
+        <div class="field"><label>Thương hiệu</label><input id="itBrand" placeholder="VD: Grundfos, Ebara..."></div>
+        <div class="field"><label>Xuất xứ</label><input id="itOrigin" placeholder="VD: Đức, Nhật Bản, Việt Nam..."></div>
+      </div>
+      <div class="grid-3">
+        <div class="field"><label>Số lượng hợp đồng</label><input type="number" min="0" step="any" id="itQty" oninput="recalcItemTotal()"></div>
+        <div class="field"><label>Đơn vị tính</label><input id="itUnit" placeholder="cái / bộ / m..."></div>
+        <div class="field"><label>Đơn giá (VNĐ)</label><input type="number" min="0" step="any" id="itPrice" oninput="recalcItemTotal()"></div>
+      </div>
+      <div class="field"><label>Thành tiền (tự động = SL hợp đồng × Đơn giá)</label><input id="itTotal" class="mono locked-field" readonly></div>
+      <div class="grid-2">
+        <div class="field"><label>Chứng từ cung cấp</label><input id="itDoc" placeholder="VD: CO/CQ, Invoice số..., Packing list..."></div>
+        <div class="field"><label>Tình trạng T&amp;C (tiến độ / chất lượng)</label>
+          <select id="itStatus">
+            <option>Chưa triển khai</option>
+            <option>Đang đặt hàng</option>
+            <option>Đang giao hàng</option>
+            <option>Đã giao đủ</option>
+            <option>Trễ tiến độ</option>
+            <option>Tạm ngưng</option>
+          </select>
+        </div>
+      </div>
+      <div class="permission-note" id="itemFieldNote"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('itemModal')">Hủy</button>
+      <button class="btn btn-primary" onclick="saveItem()">Lưu hàng hóa</button>
+    </div>
+  </div>
+</div>
+
+<!-- ITEM DETAIL MODAL (PO + Deliveries) -->
+<div class="overlay" id="detailModal">
+  <div class="modal wide">
+    <div class="modal-head">
+      <div>
+        <h2 id="detailTitle">Chi tiết hàng hóa</h2>
+        <div class="row-code" id="detailCode"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('detailModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="stat-row" id="detailStats"></div>
+
+      <div class="subhead">Số lượng PO đặt hàng (các đợt) <span id="poCountBadge"></span></div>
+      <table class="mini-table">
+        <thead><tr><th>Số PO</th><th>Ngày đặt</th><th class="num">Số lượng</th><th></th></tr></thead>
+        <tbody id="poTableBody"></tbody>
+      </table>
+      <div class="inline-form" id="poFormWrap">
+        <div class="field"><label>Số PO</label><input id="poCode" placeholder="PO-2026-xxx"></div>
+        <div class="field"><label>Ngày đặt</label><input type="date" id="poDate"></div>
+        <div class="field"><label>Số lượng</label><input type="number" min="0" step="any" id="poQty"></div>
+        <button class="btn btn-dark btn-sm" onclick="addPO()">+ Thêm PO</button>
+      </div>
+
+      <div class="subhead">Số lượng &amp; giá trị giao hàng (các đợt) <span id="dvCountBadge"></span></div>
+      <table class="mini-table">
+        <thead><tr><th>Đợt giao</th><th>Ngày giao</th><th class="num">Số lượng</th><th class="num">Giá trị (VNĐ)</th><th>Ghi chú</th><th></th></tr></thead>
+        <tbody id="dvTableBody"></tbody>
+      </table>
+      <div class="inline-form" id="dvFormWrap">
+        <div class="field"><label>Tên đợt giao</label><input id="dvBatch" placeholder="Đợt 1"></div>
+        <div class="field"><label>Ngày giao</label><input type="date" id="dvDate"></div>
+        <div class="field"><label>Số lượng</label><input type="number" min="0" step="any" id="dvQty"></div>
+        <div class="field"><label>Ghi chú</label><input id="dvNote" placeholder="Số vận đơn / ghi chú"></div>
+        <button class="btn btn-dark btn-sm" onclick="addDelivery()">+ Thêm đợt giao</button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('detailModal')">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT EXCEL MODAL -->
+<div class="overlay" id="importModal">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h2>Nhập hàng hóa từ Excel</h2>
+      <button class="modal-close" onclick="closeModal('importModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="importProjectId">
+      <p style="font-size:12.5px; color:var(--ink-600); line-height:1.7;">
+        Tải file mẫu, điền dữ liệu hàng hóa (mỗi dòng 1 mặt hàng), rồi tải file lên để nhập hàng loạt vào dự án hiện tại.
+      </p>
+      <div style="display:flex; gap:8px; margin-bottom:16px;">
+        <button class="btn btn-ghost btn-sm" onclick="downloadImportTemplate()">⇩ Tải file mẫu (.xlsx)</button>
+      </div>
+      <div class="field">
+        <label>Chọn file Excel (.xlsx, .xls, .csv)</label>
+        <input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" onchange="handleImportFile(event)">
+      </div>
+      <div id="importPreviewWrap" style="display:none; margin-top:14px;">
+        <div class="subhead">Xem trước dữ liệu</div>
+        <div class="permission-note" id="importSummary"></div>
+        <table class="mini-table" id="importPreviewTable"></table>
+      </div>
+      <div class="permission-note" id="importFieldNote" style="margin-top:12px;"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('importModal')">Hủy</button>
+      <button class="btn btn-primary" id="importConfirmBtn" onclick="confirmImport()" disabled>Nhập dữ liệu</button>
+    </div>
+  </div>
+</div>
+
+<!-- BULK DELIVERY UPDATE MODAL -->
+<div class="overlay" id="deliveryUpdateModal">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h2>Cập nhật giao hàng</h2>
+      <button class="modal-close" onclick="closeModal('deliveryUpdateModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="dvUpdProjectId">
+      <p style="font-size:12.5px; color:var(--ink-600); line-height:1.7;">
+        Chọn hàng hóa cần giao và nhập số lượng giao đợt này. Có thể chọn nhiều hàng hóa cùng lúc.
+      </p>
+      <div class="grid-3">
+        <div class="field"><label>Tên đợt giao</label><input id="dvUpdBatch" placeholder="Đợt 1"></div>
+        <div class="field"><label>Ngày giao</label><input type="date" id="dvUpdDate"></div>
+        <div class="field"><label>Ghi chú chung</label><input id="dvUpdNote" placeholder="Số vận đơn / ghi chú"></div>
+      </div>
+      <div class="subhead">Chọn hàng hóa &amp; số lượng giao</div>
+      <table class="mini-table" id="dvUpdTable">
+        <thead><tr><th style="width:28px;"></th><th>Sản phẩm</th><th>Hệ thống</th><th class="num">SL còn lại</th><th class="num" style="width:120px;">SL giao đợt này</th></tr></thead>
+        <tbody id="dvUpdTableBody"></tbody>
+      </table>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('deliveryUpdateModal')">Hủy</button>
+      <button class="btn btn-primary" onclick="submitDeliveryUpdate()">Lưu cập nhật giao hàng</button>
+    </div>
+  </div>
+</div>
+
+<!-- USERS MODAL -->
+<div class="overlay" id="usersModal">
+  <div class="modal wide">
+    <div class="modal-head"><h2>Quản lý người dùng &amp; phân quyền</h2><button class="modal-close" onclick="closeModal('usersModal')">✕</button></div>
+    <div class="modal-body">
+      <table class="mini-table" id="usersTableWrap">
+        <thead><tr><th>Tên hiển thị</th><th>Tài khoản</th><th>Vai trò</th><th></th></tr></thead>
+        <tbody id="usersTableBody"></tbody>
+      </table>
+      <div class="inline-form">
+        <div class="field"><label>Tên hiển thị</label><input id="usrName" placeholder="Nguyễn Văn A"></div>
+        <div class="field"><label>Tài khoản đăng nhập</label><input id="usrUsername" placeholder="a.nguyen"></div>
+        <div class="field"><label>Mật khẩu</label><input id="usrPassword" placeholder="Mật khẩu"></div>
+        <div class="field"><label>Vai trò</label>
+          <select id="usrRole">
+            <option>Sales</option>
+            <option>Kế toán</option>
+            <option>Viewer</option>
+            <option>Admin</option>
+          </select>
+        </div>
+        <button class="btn btn-dark btn-sm" onclick="addUser()">+ Thêm người dùng</button>
+      </div>
+      <div class="subhead">Ma trận phân quyền</div>
+      <table class="role-table">
+        <thead><tr><th>Chức năng</th><th>Admin</th><th>Sales</th><th>Kế toán</th><th>Viewer</th></tr></thead>
+        <tbody>
+          <tr><td>Xem dữ liệu</td><td>✔</td><td>✔</td><td>✔</td><td>✔</td></tr>
+          <tr><td>Thêm / sửa dự án</td><td>✔</td><td>✔</td><td>—</td><td>—</td></tr>
+          <tr><td>Xóa dự án</td><td>✔</td><td>—</td><td>—</td><td>—</td></tr>
+          <tr><td>Thêm / sửa hàng hóa</td><td>✔</td><td>✔</td><td>✔</td><td>—</td></tr>
+          <tr><td>Xóa hàng hóa</td><td>✔</td><td>✔</td><td>—</td><td>—</td></tr>
+          <tr><td>Sửa đơn giá &amp; chứng từ cung cấp</td><td>✔</td><td>—</td><td>✔</td><td>—</td></tr>
+          <tr><td>Quản lý PO / đợt giao hàng</td><td>✔</td><td>✔</td><td>—</td><td>—</td></tr>
+          <tr><td>Quản lý người dùng</td><td>✔</td><td>—</td><td>—</td><td>—</td></tr>
+          <tr><td>Cấu hình đồng bộ Google Sheets</td><td>✔</td><td>—</td><td>—</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal('usersModal')">Đóng</button></div>
+  </div>
+</div>
+
+<!-- SYNC MODAL -->
+<div class="overlay" id="syncModal">
+  <div class="modal wide">
+    <div class="modal-head"><h2>Đồng bộ với Google Sheets</h2><button class="modal-close" onclick="closeModal('syncModal')">✕</button></div>
+    <div class="modal-body">
+      <p style="font-size:13px; color:var(--ink-600); line-height:1.6;">Ứng dụng lưu dữ liệu ngay trên trình duyệt. Để chia sẻ dữ liệu cho nhiều người cùng dùng, kết nối với 1 Google Sheet thông qua Google Apps Script (miễn phí, không cần server riêng).</p>
+      <div class="subhead">Bước 1 — Tạo backend trên Google Sheets</div>
+      <p style="font-size:12.5px; color:var(--ink-600); line-height:1.7;">
+        1. Tạo 1 Google Sheet mới.<br>
+        2. Vào <b>Tiện ích mở rộng → Apps Script</b>.<br>
+        3. Xóa hết code mẫu, dán đoạn mã bên dưới (cũng có trong file "apps-script-backend.gs" đã được cung cấp kèm).<br>
+        4. Bấm <b>Triển khai → Triển khai mới → Web app</b>. Chọn "Thực thi với: Tôi", "Người có quyền truy cập: Bất kỳ ai".<br>
+        5. Sao chép URL Web App, dán vào ô bên dưới.
+      </p>
+      <div class="code-box" id="appsScriptCode"></div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="copyScript()">📋 Sao chép mã Apps Script</button>
+
+      <div class="subhead">Bước 2 — Kết nối</div>
+      <div class="field"><label>URL Web App</label><input id="webAppUrl" placeholder="https://script.google.com/macros/s/xxxxx/exec"></div>
+      <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+        <button class="btn btn-dark btn-sm" onclick="saveWebAppUrl()">Lưu URL</button>
+        <button class="btn btn-primary btn-sm" onclick="pushToSheets()">⇧ Đẩy dữ liệu lên Sheets</button>
+        <button class="btn btn-ghost btn-sm" onclick="pullFromSheets()">⇩ Tải dữ liệu từ Sheets</button>
+      </div>
+      <div class="field" style="margin-top:14px; display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" id="autoSyncToggle" style="width:auto;" onchange="toggleAutoSync()">
+        <label for="autoSyncToggle" style="margin:0; font-size:13px;">Tự động đồng bộ liên tục mỗi 30 giây (đẩy &amp; tải dữ liệu qua lại giữa các người dùng)</label>
+      </div>
+      <div class="permission-note" id="syncStatusNote">Chưa kết nối Google Sheets — dữ liệu chỉ đang lưu trên trình duyệt này.</div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal('syncModal')">Đóng</button></div>
+  </div>
 </div>
 
 <script>
-// ===================== STATE =====================
-let products = [];
-let quoteItems = [];
-let vatEnabled = false;
+/* ================= DATA LAYER ================= */
+const STORAGE_KEY = 'tid_goods_tracker_v1';
 
-// ===================== INIT =====================
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('quoteDate').value = new Date().toISOString().split('T')[0];
-  document.getElementById('quoteNo').value = 'BG-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random()*900)+100);
-  setupDragDrop();
-  renderTable();
-});
+function uid(prefix){ return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
-function setupDragDrop() {
-  const zone = document.getElementById('uploadZone');
-  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
-  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-  zone.addEventListener('drop', e => {
-    e.preventDefault();
-    zone.classList.remove('drag-over');
-    const f = e.dataTransfer.files[0];
-    if (f) processFile(f);
-  });
-  document.getElementById('fileInput').addEventListener('change', e => {
-    if (e.target.files[0]) processFile(e.target.files[0]);
-  });
+function defaultState(){
+  const demoProjId = uid('pj');
+  const itemId1 = uid('it');
+  const itemId2 = uid('it');
+  return {
+    users: [
+      {id:uid('u'), username:'admin', password:'admin123', role:'Admin', name:'Quản trị viên'},
+    ],
+    projects: [
+      {id:demoProjId, code:'[MẪU]-2026-001', name:'Dự án mẫu — Nhà máy xử lý nước ABC', client:'Công ty CP ABC', system:'Hệ thống xử lý nước thải', status:'Đang triển khai', progress:'Đang lắp đặt thiết bị', progressPct:60, note:'Dự án mẫu để tham khảo, có thể xóa.'}
+    ],
+    items: [
+      {id:itemId1, projectId:demoProjId, name:'Máy bơm ly tâm trục ngang', code:'PUMP-CN-050', system:'Hệ thống cơ khí', brand:'Grundfos', origin:'Đan Mạch', spec:'Q=50m3/h, H=32m, 3 pha, 380V, IP55', qty:4, unit:'bộ', price:38500000, doc:'CO/CQ, Invoice INV-0021', status:'Đang giao hàng'},
+      {id:itemId2, projectId:demoProjId, name:'Ống thép mạ kẽm D114', code:'PIPE-GS-114', system:'Hệ thống cấp thoát nước', brand:'Hoa Sen', origin:'Việt Nam', spec:'D114mm, dày 4.5mm, TCVN 6117', qty:800, unit:'m', price:295000, doc:'CO/CQ, Packing list PL-0012', status:'Đã giao đủ'},
+    ],
+    poBatches: [
+      {id:uid('po'), itemId:itemId1, poCode:'PO-2026-014', date:'2026-05-10', qty:4},
+      {id:uid('po'), itemId:itemId2, poCode:'PO-2026-009', date:'2026-04-02', qty:800},
+    ],
+    deliveries: [
+      {id:uid('dv'), itemId:itemId1, batchNo:'Đợt 1', date:'2026-06-20', qty:2, note:'Giao kho công trình'},
+      {id:uid('dv'), itemId:itemId2, batchNo:'Đợt 1', date:'2026-04-25', qty:500, note:''},
+      {id:uid('dv'), itemId:itemId2, batchNo:'Đợt 2', date:'2026-05-15', qty:300, note:'Giao đủ'},
+    ],
+    sheetsConfig: {webAppUrl:'', autoSync:false},
+    session: {userId:null},
+    ui: {currentProjectId:demoProjId}
+  };
 }
 
-// ===================== FILE PROCESSING =====================
-function processFile(file) {
-  setStatus('loading', `Đang đọc file ${file.name}...`);
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch(e){ return null; }
+}
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+let state = loadState() || defaultState();
+if(!state.ui) state.ui = {currentProjectId: (state.projects[0]||{}).id || null};
+if(!state.ui.itemFilters) state.ui.itemFilters = {search:'', system:'', status:''};
+if(!state.sheetsConfig) state.sheetsConfig = {webAppUrl:'', autoSync:false};
+if(state.sheetsConfig.autoSync === undefined) state.sheetsConfig.autoSync = false;
+state.projects.forEach(p=>{ if(p.system===undefined) p.system=''; if(p.progress===undefined) p.progress='Chưa khởi công'; if(p.progressPct===undefined) p.progressPct=0; });
+state.items.forEach(i=>{ if(i.system===undefined) i.system=''; if(i.brand===undefined) i.brand=''; if(i.origin===undefined) i.origin=''; });
+
+/* ================= PERMISSIONS ================= */
+function currentUser(){ return state.users.find(u => u.id === state.session.userId); }
+const PERM_MATRIX = {
+  manageProjects: ['Admin','Sales'],
+  deleteProjects: ['Admin'],
+  manageItems: ['Admin','Sales','Kế toán'],
+  deleteItems: ['Admin','Sales'],
+  editFinance: ['Admin','Kế toán'],
+  managePO: ['Admin','Sales'],
+  manageDeliveries: ['Admin','Sales'],
+  manageUsers: ['Admin'],
+  manageSettings: ['Admin'],
+};
+function can(action){
+  const u = currentUser();
+  if(!u) return false;
+  return (PERM_MATRIX[action] || []).includes(u.role);
+}
+
+/* ================= HELPERS ================= */
+function fmtMoney(n){
+  n = Number(n)||0;
+  return n.toLocaleString('vi-VN');
+}
+function fmtNum(n){
+  n = Number(n)||0;
+  return n.toLocaleString('vi-VN', {maximumFractionDigits:2});
+}
+function sum(arr, fn){ return arr.reduce((a,x)=>a+(Number(fn(x))||0),0); }
+function itemPOTotal(itemId){ return sum(state.poBatches.filter(p=>p.itemId===itemId), p=>p.qty); }
+function itemDeliveredQty(itemId){ return sum(state.deliveries.filter(d=>d.itemId===itemId), d=>d.qty); }
+function itemDeliveredValue(itemId, price){ return itemDeliveredQty(itemId) * price; }
+function statusStampClass(status){
+  const map = {
+    'Chưa triển khai':'stamp-grey', 'Đang đặt hàng':'stamp-amber', 'Đang giao hàng':'stamp-blue',
+    'Đã giao đủ':'stamp-green', 'Trễ tiến độ':'stamp-red', 'Tạm ngưng':'stamp-red'
+  };
+  return map[status] || 'stamp-grey';
+}
+function projStatusStampClass(status){
+  const map = {'Đang triển khai':'stamp-blue','Tạm dừng':'stamp-amber','Hoàn thành':'stamp-green','Đã hủy':'stamp-red'};
+  return map[status] || 'stamp-grey';
+}
+function toast(msg, isError){
+  const t = document.createElement('div');
+  t.className = 'toast' + (isError ? ' error' : '');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateY(6px)'; setTimeout(()=>t.remove(),250); }, 2400);
+}
+function openModal(id){ document.getElementById(id).classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+/* ================= LOGIN ================= */
+function renderLoginUsers(){
+  const sel = document.getElementById('loginUser');
+  sel.innerHTML = state.users.map(u => `<option value="${u.id}">${u.name} — ${u.role}</option>`).join('');
+}
+function handleLogin(){
+  const uidVal = document.getElementById('loginUser').value;
+  const pass = document.getElementById('loginPass').value;
+  const user = state.users.find(u=>u.id===uidVal);
+  const errBox = document.getElementById('loginError');
+  if(!user || user.password !== pass){
+    errBox.textContent = 'Sai mật khẩu. Vui lòng thử lại.';
+    errBox.style.display = 'block';
+    return;
+  }
+  errBox.style.display = 'none';
+  state.session.userId = user.id;
+  saveState();
+  boot();
+}
+function handleLogout(){
+  state.session.userId = null;
+  saveState();
+  document.getElementById('loginPass').value = '';
+  boot();
+}
+
+/* ================= RENDER: SHELL ================= */
+function boot(){
+  const user = currentUser();
+  if(!user){
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('appShell').style.display = 'none';
+    renderLoginUsers();
+    return;
+  }
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appShell').style.display = 'grid';
+  document.getElementById('topUserName').textContent = user.name;
+  document.getElementById('topUserRole').textContent = user.role;
+  document.getElementById('btnUsers').style.display = can('manageUsers') ? 'flex' : 'none';
+  document.getElementById('addProjectBtnWrap').style.display = can('manageProjects') ? 'block' : 'none';
+  renderProjectList();
+  renderMain();
+  restartAutoSync();
+}
+
+/* ================= RENDER: PROJECT LIST ================= */
+function renderProjectList(){
+  const q = (document.getElementById('projSearch').value || '').toLowerCase();
+  const list = document.getElementById('projectList');
+  const filtered = state.projects.filter(p => (p.name+p.code).toLowerCase().includes(q));
+  if(filtered.length === 0){
+    list.innerHTML = `<div style="padding:16px; font-size:12.5px; color:var(--steel-300);">Không tìm thấy dự án nào.</div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(p => `
+    <div class="proj-item ${p.id===state.ui.currentProjectId?'active':''}" onclick="selectProject('${p.id}')">
+      <div class="p-code">${p.code}</div>
+      <div class="p-name">${p.name}</div>
+      ${p.system ? `<div style="font-size:11px; color:var(--steel-300); margin-top:3px;">⚙ ${p.system}</div>` : ''}
+      <div class="p-status" style="display:flex; gap:5px; flex-wrap:wrap; margin-top:6px;">
+        <span class="stamp ${projStatusStampClass(p.status)}">${p.status}</span>
+        <span class="stamp stamp-blue">${p.progress||'—'}${p.progressPct!==undefined && p.progressPct!=='' ? ' · '+p.progressPct+'%' : ''}</span>
+      </div>
+    </div>
+  `).join('');
+}
+function selectProject(id){
+  state.ui.currentProjectId = id;
+  state.ui.itemFilters = {search:'', system:'', status:''};
+  saveState();
+  renderProjectList();
+  renderMain();
+}
+
+/* ================= RENDER: MAIN (ITEM TABLE) ================= */
+function renderMain(){
+  const main = document.getElementById('main');
+  const proj = state.projects.find(p=>p.id===state.ui.currentProjectId);
+  if(!proj){
+    main.innerHTML = `
+      <div class="empty-state">
+        <h3>Chưa có dự án nào được chọn</h3>
+        <p>Tạo dự án đầu tiên để bắt đầu theo dõi hàng hóa: số lượng đặt hàng, các đợt giao hàng và tình trạng tiến độ.</p>
+        ${can('manageProjects') ? `<button class="btn btn-primary" onclick="openProjectModal()">+ Tạo dự án mới</button>` : ''}
+      </div>`;
+    return;
+  }
+  const items = state.items.filter(i=>i.projectId===proj.id);
+  const totalContractValue = sum(items, i=>i.qty*i.price);
+  const totalDeliveredValue = sum(items, i=>itemDeliveredValue(i.id, i.price));
+  const totalRemainingQty = sum(items, i=>Math.max(i.qty - itemDeliveredQty(i.id), 0));
+
+  main.innerHTML = `
+    <div class="page-head">
+      <div>
+        <div class="titles">
+          <h1>${proj.name}</h1>
+          <span class="p-code-tag">${proj.code}</span>
+          <span class="stamp ${projStatusStampClass(proj.status)}">${proj.status}</span>
+          <span class="stamp stamp-blue">${proj.progress||'—'}${proj.progressPct!==undefined && proj.progressPct!=='' ? ' · '+proj.progressPct+'%' : ''}</span>
+        </div>
+        <div class="proj-meta">
+          <div class="m">Chủ đầu tư: <b>${proj.client||'—'}</b></div>
+          <div class="m">Hệ thống: <b>${proj.system||'—'}</b></div>
+          <div class="m">Số mặt hàng: <b>${items.length}</b></div>
+        </div>
+      </div>
+      <div class="actions">
+        ${can('manageProjects') ? `<button class="btn btn-ghost btn-sm" onclick="openProjectModal('${proj.id}')">Sửa dự án</button>` : ''}
+        ${can('deleteProjects') ? `<button class="btn btn-danger btn-sm" onclick="deleteProject('${proj.id}')">Xóa dự án</button>` : ''}
+        ${can('manageDeliveries') ? `<button class="btn btn-ghost btn-sm" onclick="openDeliveryUpdateModal('${proj.id}')">🚚 Cập nhật giao hàng</button>` : ''}
+        ${can('manageItems') ? `<button class="btn btn-ghost btn-sm" onclick="openImportModal('${proj.id}')">⇪ Nhập từ Excel</button>` : ''}
+        ${can('manageItems') ? `<button class="btn btn-primary btn-sm" onclick="openItemModal(null,'${proj.id}')">+ Thêm hàng hóa</button>` : ''}
+      </div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-card"><div class="lbl">Giá trị hợp đồng</div><div class="val">${fmtMoney(totalContractValue)}</div></div>
+      <div class="stat-card"><div class="lbl">Giá trị đã giao</div><div class="val">${fmtMoney(totalDeliveredValue)}</div></div>
+      <div class="stat-card"><div class="lbl">Tổng SL còn lại</div><div class="val">${fmtNum(totalRemainingQty)}</div></div>
+    </div>
+
+    ${items.length === 0 ? '' : renderFilterBarHtml(items)}
+    <div id="itemsTableContainer"></div>
+  `;
+  renderItemsTable();
+}
+
+function distinctItemSystems(items){
+  return [...new Set(items.map(i=>(i.system||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'vi'));
+}
+const ITEM_STATUS_OPTIONS = ['Chưa triển khai','Đang đặt hàng','Đang giao hàng','Đã giao đủ','Trễ tiến độ','Tạm ngưng'];
+
+function renderFilterBarHtml(items){
+  const f = state.ui.itemFilters || {search:'', system:'', status:''};
+  const systems = distinctItemSystems(items);
+  return `
+    <div class="filter-bar">
+      <div class="field" style="min-width:220px;">
+        <label>Tìm kiếm</label>
+        <input id="fltSearch" placeholder="Tên sản phẩm / mã hàng..." value="${(f.search||'').replace(/"/g,'&quot;')}" oninput="onItemFilterChange()">
+      </div>
+      <div class="field" style="min-width:180px;">
+        <label>Hệ thống</label>
+        <select id="fltSystem" onchange="onItemFilterChange()">
+          <option value="">Tất cả hệ thống</option>
+          ${systems.map(s=>`<option value="${s}" ${f.system===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field" style="min-width:180px;">
+        <label>Tình trạng T&amp;C</label>
+        <select id="fltStatus" onchange="onItemFilterChange()">
+          <option value="">Tất cả trạng thái</option>
+          ${ITEM_STATUS_OPTIONS.map(s=>`<option value="${s}" ${f.status===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="align-self:flex-end;" onclick="clearItemFilters()">Xóa lọc</button>
+    </div>
+  `;
+}
+function onItemFilterChange(){
+  state.ui.itemFilters = {
+    search: document.getElementById('fltSearch').value,
+    system: document.getElementById('fltSystem').value,
+    status: document.getElementById('fltStatus').value,
+  };
+  saveState();
+  renderItemsTable();
+}
+function clearItemFilters(){
+  state.ui.itemFilters = {search:'', system:'', status:''};
+  saveState();
+  renderMain();
+}
+function applyItemFilters(items){
+  const f = state.ui.itemFilters || {search:'', system:'', status:''};
+  const q = (f.search||'').trim().toLowerCase();
+  return items.filter(it=>{
+    if(q && !((it.name+it.code).toLowerCase().includes(q))) return false;
+    if(f.system && (it.system||'') !== f.system) return false;
+    if(f.status && (it.status||'') !== f.status) return false;
+    return true;
+  });
+}
+function renderItemsTable(){
+  const proj = state.projects.find(p=>p.id===state.ui.currentProjectId);
+  const container = document.getElementById('itemsTableContainer');
+  if(!proj || !container) return;
+  const allItems = state.items.filter(i=>i.projectId===proj.id);
+  const items = applyItemFilters(allItems);
+
+  if(allItems.length === 0){
+    container.innerHTML = `
+      <div class="empty-state">
+        <h3>Chưa có hàng hóa nào trong dự án này</h3>
+        <p>Thêm mặt hàng để bắt đầu theo dõi số lượng, đơn giá, PO đặt hàng và tiến độ giao hàng.</p>
+        ${can('manageItems') ? `<button class="btn btn-primary" onclick="openItemModal(null,'${proj.id}')">+ Thêm hàng hóa</button>` : ''}
+      </div>`;
+    return;
+  }
+  if(items.length === 0){
+    container.innerHTML = `
+      <div class="empty-state">
+        <h3>Không có hàng hóa nào khớp bộ lọc</h3>
+        <p>Thử điều chỉnh từ khóa tìm kiếm hoặc bỏ bớt điều kiện lọc.</p>
+        <button class="btn btn-ghost btn-sm" onclick="clearItemFilters()">Xóa lọc</button>
+      </div>`;
+    return;
+  }
+  container.innerHTML = `
+    <div class="filter-result-count">Hiển thị ${items.length} / ${allItems.length} mặt hàng</div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Sản phẩm</th>
+          <th>Hệ thống</th>
+          <th>Thương hiệu</th>
+          <th>Xuất xứ</th>
+          <th class="num">SL hợp đồng</th>
+          <th class="num">Đơn giá</th>
+          <th class="num">Thành tiền</th>
+          <th class="num">SL PO</th>
+          <th>Tiến độ giao hàng</th>
+          <th class="num">SL còn lại</th>
+          <th>Tình trạng T&amp;C</th>
+          <th>Chứng từ</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        ${items.map(rowHtml).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function rowHtml(it){
+  const total = it.qty * it.price;
+  const poQty = itemPOTotal(it.id);
+  const delivered = itemDeliveredQty(it.id);
+  const remaining = Math.max(it.qty - delivered, 0);
+  const pct = it.qty > 0 ? Math.min((delivered/it.qty)*100, 100) : 0;
+  const over = delivered > it.qty;
+  return `
+    <tr>
+      <td>
+        <div class="row-name">${it.name}</div>
+        <div class="row-spec">${it.spec||''}</div>
+        <div class="row-code">${it.code||''}</div>
+      </td>
+      <td><span class="stamp stamp-blue" style="transform:none;">${it.system||'—'}</span></td>
+      <td style="font-size:12.5px;">${it.brand||'—'}</td>
+      <td style="font-size:12.5px;">${it.origin||'—'}</td>
+      <td class="num">${fmtNum(it.qty)} <span style="color:var(--steel-500); font-size:11px;">${it.unit||''}</span></td>
+      <td class="num">${fmtMoney(it.price)}</td>
+      <td class="num">${fmtMoney(total)}</td>
+      <td class="num">${fmtNum(poQty)}</td>
+      <td>
+        <div class="gauge ${over?'over':''}"><div class="fill" style="width:${pct}%"></div></div>
+        <div class="gauge-lbl">${fmtNum(delivered)} / ${fmtNum(it.qty)} ${it.unit||''}</div>
+      </td>
+      <td class="num">${fmtNum(remaining)}</td>
+      <td><span class="stamp ${statusStampClass(it.status)}">${it.status}</span></td>
+      <td style="max-width:140px; font-size:11.5px; color:var(--ink-600);">${it.doc||'—'}</td>
+      <td>
+        <div class="row-actions">
+          <button class="icon-link" onclick="openDetailModal('${it.id}')">Chi tiết</button>
+          ${can('manageItems') ? `<button class="icon-link" onclick="openItemModal('${it.id}')">Sửa</button>` : ''}
+          ${can('deleteItems') ? `<button class="icon-link" onclick="deleteItem('${it.id}')">Xóa</button>` : ''}
+        </div>
+      </td>
+    </tr>
+  `;
+}
+
+/* ================= PROJECT CRUD ================= */
+function openProjectModal(id){
+  if(!can('manageProjects')){ toast('Bạn không có quyền thao tác dự án.', true); return; }
+  const isEdit = !!id;
+  document.getElementById('projectModalTitle').textContent = isEdit ? 'Sửa dự án' : 'Dự án mới';
+  const p = isEdit ? state.projects.find(x=>x.id===id) : {id:'',code:'',name:'',client:'',system:'',status:'Đang triển khai',progress:'Chưa khởi công',progressPct:0,note:''};
+  document.getElementById('pjId').value = p.id;
+  document.getElementById('pjCode').value = p.code;
+  document.getElementById('pjName').value = p.name;
+  document.getElementById('pjClient').value = p.client||'';
+  document.getElementById('pjSystem').value = p.system||'';
+  document.getElementById('pjStatus').value = p.status;
+  document.getElementById('pjProgress').value = p.progress||'Chưa khởi công';
+  document.getElementById('pjProgressPct').value = p.progressPct!==undefined ? p.progressPct : 0;
+  document.getElementById('pjNote').value = p.note||'';
+  openModal('projectModal');
+}
+function saveProject(){
+  const id = document.getElementById('pjId').value;
+  const code = document.getElementById('pjCode').value.trim();
+  const name = document.getElementById('pjName').value.trim();
+  if(!name){ toast('Vui lòng nhập tên dự án.', true); return; }
+  const common = {
+    code, name,
+    client:document.getElementById('pjClient').value.trim(),
+    system:document.getElementById('pjSystem').value.trim(),
+    status:document.getElementById('pjStatus').value,
+    progress:document.getElementById('pjProgress').value,
+    progressPct:Math.max(0, Math.min(100, Number(document.getElementById('pjProgressPct').value)||0)),
+    note:document.getElementById('pjNote').value.trim()
+  };
+  if(id){
+    const p = state.projects.find(x=>x.id===id);
+    Object.assign(p, common);
+  } else {
+    const newP = Object.assign({id:uid('pj')}, common);
+    state.projects.push(newP);
+    state.ui.currentProjectId = newP.id;
+  }
+  saveState();
+  closeModal('projectModal');
+  renderProjectList();
+  renderMain();
+  toast('Đã lưu dự án.');
+}
+function deleteProject(id){
+  if(!can('deleteProjects')){ toast('Bạn không có quyền xóa dự án.', true); return; }
+  if(!confirm('Xóa dự án sẽ xóa toàn bộ hàng hóa, PO và đợt giao hàng liên quan. Tiếp tục?')) return;
+  const itemIds = state.items.filter(i=>i.projectId===id).map(i=>i.id);
+  state.items = state.items.filter(i=>i.projectId!==id);
+  state.poBatches = state.poBatches.filter(p=>!itemIds.includes(p.itemId));
+  state.deliveries = state.deliveries.filter(d=>!itemIds.includes(d.itemId));
+  state.projects = state.projects.filter(p=>p.id!==id);
+  if(state.ui.currentProjectId === id) state.ui.currentProjectId = (state.projects[0]||{}).id || null;
+  saveState();
+  renderProjectList();
+  renderMain();
+  toast('Đã xóa dự án.');
+}
+
+/* ================= ITEM CRUD ================= */
+function recalcItemTotal(){
+  const qty = Number(document.getElementById('itQty').value)||0;
+  const price = Number(document.getElementById('itPrice').value)||0;
+  document.getElementById('itTotal').value = fmtMoney(qty*price) + ' VNĐ';
+}
+function openItemModal(id, projectId){
+  if(!can('manageItems')){ toast('Bạn không có quyền thao tác hàng hóa.', true); return; }
+  const isEdit = !!id;
+  document.getElementById('itemModalTitle').textContent = isEdit ? 'Sửa hàng hóa' : 'Hàng hóa mới';
+  const it = isEdit ? state.items.find(x=>x.id===id) : {id:'',projectId:projectId||state.ui.currentProjectId,name:'',code:'',system:'',brand:'',origin:'',spec:'',qty:0,unit:'',price:0,doc:'',status:'Chưa triển khai'};
+  document.getElementById('itId').value = it.id;
+  document.getElementById('itId').dataset.projectId = it.projectId;
+  document.getElementById('itName').value = it.name;
+  document.getElementById('itSystem').value = it.system||'';
+  document.getElementById('itCode').value = it.code;
+  document.getElementById('itSpec').value = it.spec;
+  document.getElementById('itBrand').value = it.brand||'';
+  document.getElementById('itOrigin').value = it.origin||'';
+  document.getElementById('itQty').value = it.qty;
+  document.getElementById('itUnit').value = it.unit;
+  document.getElementById('itPrice').value = it.price;
+  document.getElementById('itDoc').value = it.doc;
+  document.getElementById('itStatus').value = it.status;
+  recalcItemTotal();
+
+  const financeLocked = !can('editFinance');
+  document.getElementById('itPrice').readOnly = financeLocked;
+  document.getElementById('itDoc').readOnly = financeLocked;
+  document.getElementById('itPrice').classList.toggle('locked-field', financeLocked);
+  document.getElementById('itDoc').classList.toggle('locked-field', financeLocked);
+  document.getElementById('itemFieldNote').textContent = financeLocked
+    ? 'Đơn giá và Chứng từ cung cấp chỉ Admin / Kế toán được chỉnh sửa.'
+    : '';
+  openModal('itemModal');
+}
+function saveItem(){
+  const id = document.getElementById('itId').value;
+  const projectId = document.getElementById('itId').dataset.projectId;
+  const name = document.getElementById('itName').value.trim();
+  if(!name){ toast('Vui lòng nhập tên sản phẩm.', true); return; }
+  const payload = {
+    name,
+    system: document.getElementById('itSystem').value.trim(),
+    code: document.getElementById('itCode').value.trim(),
+    spec: document.getElementById('itSpec').value.trim(),
+    brand: document.getElementById('itBrand').value.trim(),
+    origin: document.getElementById('itOrigin').value.trim(),
+    qty: Number(document.getElementById('itQty').value)||0,
+    unit: document.getElementById('itUnit').value.trim(),
+    status: document.getElementById('itStatus').value,
+  };
+  if(can('editFinance')){
+    payload.price = Number(document.getElementById('itPrice').value)||0;
+    payload.doc = document.getElementById('itDoc').value.trim();
+  }
+  if(id){
+    Object.assign(state.items.find(x=>x.id===id), payload);
+  } else {
+    state.items.push(Object.assign({id:uid('it'), projectId, price:0, doc:''}, payload));
+  }
+  saveState();
+  closeModal('itemModal');
+  renderMain();
+  toast('Đã lưu hàng hóa.');
+}
+function deleteItem(id){
+  if(!can('deleteItems')){ toast('Bạn không có quyền xóa hàng hóa.', true); return; }
+  if(!confirm('Xóa hàng hóa này và toàn bộ PO / đợt giao hàng liên quan?')) return;
+  state.poBatches = state.poBatches.filter(p=>p.itemId!==id);
+  state.deliveries = state.deliveries.filter(d=>d.itemId!==id);
+  state.items = state.items.filter(i=>i.id!==id);
+  saveState();
+  renderMain();
+  toast('Đã xóa hàng hóa.');
+}
+
+/* ================= DETAIL MODAL: PO + DELIVERIES ================= */
+let detailItemId = null;
+function openDetailModal(itemId){
+  detailItemId = itemId;
+  renderDetailModal();
+  openModal('detailModal');
+}
+function renderDetailModal(){
+  const it = state.items.find(x=>x.id===detailItemId);
+  if(!it) return;
+  document.getElementById('detailTitle').textContent = it.name;
+  document.getElementById('detailCode').textContent = it.code || '';
+
+  const poQty = itemPOTotal(it.id);
+  const delivered = itemDeliveredQty(it.id);
+  const remaining = Math.max(it.qty - delivered, 0);
+  const deliveredValue = itemDeliveredValue(it.id, it.price);
+
+  document.getElementById('detailStats').innerHTML = `
+    <div class="stat-card"><div class="lbl">SL hợp đồng</div><div class="val">${fmtNum(it.qty)} ${it.unit||''}</div></div>
+    <div class="stat-card"><div class="lbl">SL PO đặt hàng</div><div class="val">${fmtNum(poQty)}</div></div>
+    <div class="stat-card"><div class="lbl">SL đã giao</div><div class="val">${fmtNum(delivered)}</div></div>
+    <div class="stat-card"><div class="lbl">SL còn lại</div><div class="val">${fmtNum(remaining)}</div></div>
+    <div class="stat-card"><div class="lbl">Giá trị đã giao</div><div class="val">${fmtMoney(deliveredValue)}</div></div>
+  `;
+
+  const pos = state.poBatches.filter(p=>p.itemId===it.id);
+  document.getElementById('poCountBadge').innerHTML = pos.length ? `<span class="badge-count">${pos.length}</span>` : '';
+  document.getElementById('poTableBody').innerHTML = pos.length ? pos.map(p=>`
+    <tr>
+      <td>${p.poCode||'—'}</td>
+      <td>${p.date||'—'}</td>
+      <td class="num">${fmtNum(p.qty)}</td>
+      <td>${can('managePO') ? `<button class="icon-link" onclick="removePO('${p.id}')">Xóa</button>` : ''}</td>
+    </tr>
+  `).join('') : `<tr><td colspan="4" style="color:var(--steel-500); font-size:12px;">Chưa có PO nào được ghi nhận.</td></tr>`;
+  document.getElementById('poFormWrap').style.display = can('managePO') ? 'flex' : 'none';
+
+  const dvs = state.deliveries.filter(d=>d.itemId===it.id);
+  document.getElementById('dvCountBadge').innerHTML = dvs.length ? `<span class="badge-count">${dvs.length}</span>` : '';
+  document.getElementById('dvTableBody').innerHTML = dvs.length ? dvs.map(d=>`
+    <tr>
+      <td>${d.batchNo||'—'}</td>
+      <td>${d.date||'—'}</td>
+      <td class="num">${fmtNum(d.qty)}</td>
+      <td class="num">${fmtMoney(d.qty * it.price)}</td>
+      <td>${d.note||''}</td>
+      <td>${can('manageDeliveries') ? `<button class="icon-link" onclick="removeDelivery('${d.id}')">Xóa</button>` : ''}</td>
+    </tr>
+  `).join('') : `<tr><td colspan="6" style="color:var(--steel-500); font-size:12px;">Chưa có đợt giao hàng nào.</td></tr>`;
+  document.getElementById('dvFormWrap').style.display = can('manageDeliveries') ? 'flex' : 'none';
+}
+function addPO(){
+  if(!can('managePO')){ toast('Bạn không có quyền thêm PO.', true); return; }
+  const poCode = document.getElementById('poCode').value.trim();
+  const date = document.getElementById('poDate').value;
+  const qty = Number(document.getElementById('poQty').value)||0;
+  if(!poCode || qty<=0){ toast('Vui lòng nhập số PO và số lượng hợp lệ.', true); return; }
+  state.poBatches.push({id:uid('po'), itemId:detailItemId, poCode, date, qty});
+  document.getElementById('poCode').value=''; document.getElementById('poDate').value=''; document.getElementById('poQty').value='';
+  saveState();
+  renderDetailModal();
+  renderMain();
+  toast('Đã thêm PO.');
+}
+function removePO(id){
+  if(!can('managePO')) return;
+  state.poBatches = state.poBatches.filter(p=>p.id!==id);
+  saveState();
+  renderDetailModal();
+  renderMain();
+}
+function addDelivery(){
+  if(!can('manageDeliveries')){ toast('Bạn không có quyền thêm đợt giao hàng.', true); return; }
+  const batchNo = document.getElementById('dvBatch').value.trim();
+  const date = document.getElementById('dvDate').value;
+  const qty = Number(document.getElementById('dvQty').value)||0;
+  const note = document.getElementById('dvNote').value.trim();
+  if(!batchNo || qty<=0){ toast('Vui lòng nhập tên đợt giao và số lượng hợp lệ.', true); return; }
+  state.deliveries.push({id:uid('dv'), itemId:detailItemId, batchNo, date, qty, note});
+  document.getElementById('dvBatch').value=''; document.getElementById('dvDate').value=''; document.getElementById('dvQty').value=''; document.getElementById('dvNote').value='';
+  saveState();
+  renderDetailModal();
+  renderMain();
+  toast('Đã thêm đợt giao hàng.');
+}
+function removeDelivery(id){
+  if(!can('manageDeliveries')) return;
+  state.deliveries = state.deliveries.filter(d=>d.id!==id);
+  saveState();
+  renderDetailModal();
+  renderMain();
+}
+
+/* ================= IMPORT FROM EXCEL ================= */
+const IMPORT_HEADERS = ['Tên sản phẩm','Hệ thống','Thương hiệu','Xuất xứ','Mã hàng','Thông số kỹ thuật','Số lượng','Đơn vị tính','Đơn giá','Chứng từ cung cấp','Tình trạng T&C'];
+let importParsedRows = [];
+
+function downloadImportTemplate(){
+  const ws = XLSX.utils.aoa_to_sheet([
+    IMPORT_HEADERS,
+    ['Máy bơm ly tâm trục ngang','Hệ thống cơ khí','Grundfos','Đan Mạch','PUMP-CN-050','Q=50m3/h, H=32m, 3 pha, 380V','4','bộ','38500000','CO/CQ, Invoice INV-0021','Đang giao hàng'],
+  ]);
+  ws['!cols'] = IMPORT_HEADERS.map(()=>({wch:22}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Hang hoa');
+  XLSX.writeFile(wb, 'mau-nhap-hang-hoa.xlsx');
+}
+
+function openImportModal(projectId){
+  if(!can('manageItems')){ toast('Bạn không có quyền thêm hàng hóa.', true); return; }
+  document.getElementById('importProjectId').value = projectId;
+  document.getElementById('importFileInput').value = '';
+  document.getElementById('importPreviewWrap').style.display = 'none';
+  document.getElementById('importConfirmBtn').disabled = true;
+  importParsedRows = [];
+  document.getElementById('importFieldNote').textContent = can('editFinance')
+    ? '' : 'Bạn không có quyền chỉnh sửa Đơn giá / Chứng từ cung cấp — các cột này sẽ được bỏ qua khi nhập, có thể cập nhật sau bởi Admin/Kế toán.';
+  openModal('importModal');
+}
+
+function normalizeHeader(h){ return String(h||'').trim().toLowerCase(); }
+
+function handleImportFile(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
   const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      products = extractProducts(workbook);
-      
-      document.getElementById('productCount').textContent = products.length + ' sản phẩm';
-      
-      // Replace upload zone with success message
-      const uploadPanel = document.getElementById('uploadPanel');
-      const zone = document.querySelector('.upload-zone');
-      zone.outerHTML = `
-        <div class="upload-success">
-          <div class="icon">✅</div>
-          <div>
-            <h4>${file.name}</h4>
-            <p>${products.length} sản phẩm · ${workbook.SheetNames.length} sheet</p>
-          </div>
-          <button class="btn btn-ghost" style="margin-left:auto;font-size:11px;padding:5px 10px" onclick="document.getElementById('fileInput2').click()">Thay file</button>
-          <input type="file" id="fileInput2" accept=".xlsx" style="display:none" onchange="processFile(this.files[0])"/>
-        </div>`;
-      
-      setStatus('ready', `Đã tải ${products.length} sản phẩm từ ${workbook.SheetNames.length} sheet`);
-    } catch(err) {
-      setStatus('error', 'Lỗi đọc file: ' + err.message);
+  reader.onload = function(e){
+    try{
+      const wb = XLSX.read(e.target.result, {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {defval:''});
+      const headerMap = {};
+      IMPORT_HEADERS.forEach(h => headerMap[normalizeHeader(h)] = h);
+      importParsedRows = rows.map(r=>{
+        const norm = {};
+        Object.keys(r).forEach(k=>{
+          const std = headerMap[normalizeHeader(k)];
+          if(std) norm[std] = r[k];
+        });
+        return norm;
+      }).filter(r => String(r['Tên sản phẩm']||'').trim() !== '');
+      renderImportPreview();
+    }catch(err){
+      toast('Không đọc được file. Vui lòng dùng đúng file mẫu.', true);
     }
   };
   reader.readAsArrayBuffer(file);
 }
 
-function extractProducts(wb) {
-  const results = [];
-  const skipSheets = ['TOTAL', 'TINH DUNG LUONG AC QUY'];
-  
-  for (const sheetName of wb.SheetNames) {
-    if (skipSheets.includes(sheetName)) continue;
-    try {
-      const ws = wb.Sheets[sheetName];
-      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
-      
-      // Find header row and price column
-      let priceCol = -1, nameCol = -1, modelCol = -1, unitCol = -1;
-      let headerRow = 0;
-      
-      for (let ri = 0; ri < Math.min(10, rows.length); ri++) {
-        const row = rows[ri] || [];
-        for (let ci = 0; ci < row.length; ci++) {
-          const v = String(row[ci] || '').toLowerCase();
-          if (/giá bán|đơn giá|price|gb t|giá tid|giá t0/.test(v)) {
-            priceCol = ci; headerRow = ri; break;
-          }
-        }
-        if (priceCol >= 0) break;
-      }
-      
-      // Detect column roles from header
-      const hrow = rows[headerRow] || [];
-      for (let ci = 0; ci < hrow.length; ci++) {
-        const v = String(hrow[ci] || '').toLowerCase();
-        if (/part|model|mã|code/.test(v) && modelCol < 0) modelCol = ci;
-        else if (/mô tả|description|tên|name|hàng|sản phẩm/.test(v) && nameCol < 0) nameCol = ci;
-        else if (/đvt|unit|dvt/.test(v) && unitCol < 0) unitCol = ci;
-      }
-      
-      if (modelCol < 0) modelCol = 0;
-      if (nameCol < 0) nameCol = modelCol === 0 ? 1 : 0;
-      
-      for (let ri = headerRow + 1; ri < rows.length; ri++) {
-        const row = rows[ri] || [];
-        
-        // Find price
-        let price = null;
-        const checkPrice = v => {
-          const n = parseFloat(String(v || '').replace(/,/g, ''));
-          return !isNaN(n) && n >= 5000 && n <= 999999999 ? n : null;
-        };
-        
-        if (priceCol >= 0) price = checkPrice(row[priceCol]);
-        if (!price) {
-          for (let ci = row.length - 1; ci >= 0; ci--) {
-            price = checkPrice(row[ci]);
-            if (price) break;
-          }
-        }
-        if (!price) continue;
-        
-        const model = String(row[modelCol] || '').trim();
-        const name = String(row[nameCol] || '').trim();
-        const unit = unitCol >= 0 ? String(row[unitCol] || 'cái').trim() : 'cái';
-        
-        if (!model && !name) continue;
-        if (['nan', 'null', 'undefined'].includes(model.toLowerCase()) && ['nan', 'null', 'undefined'].includes(name.toLowerCase())) continue;
-        
-        const cleanModel = ['nan', 'null', '', 'stt', 'no'].includes(model.toLowerCase()) ? '' : model;
-        const cleanName = ['nan', 'null'].includes(name.toLowerCase()) ? '' : name;
-        
-        const display = cleanModel && cleanName && cleanModel !== cleanName 
-          ? `${cleanModel} - ${cleanName}` 
-          : (cleanModel || cleanName);
-        
-        if (!display || display.length < 2) continue;
-        
-        results.push({
-          id: results.length,
-          category: sheetName,
-          model: cleanModel,
-          name: cleanName || cleanModel,
-          display: display.substring(0, 200),
-          price: Math.round(price),
-          unit: ['nan','null',''].includes(unit.toLowerCase()) ? 'cái' : unit
-        });
-      }
-    } catch(e) {}
+function renderImportPreview(){
+  const wrap = document.getElementById('importPreviewWrap');
+  const btn = document.getElementById('importConfirmBtn');
+  if(importParsedRows.length === 0){
+    wrap.style.display = 'block';
+    document.getElementById('importSummary').textContent = 'Không tìm thấy dòng hàng hóa hợp lệ nào trong file (cần có cột "Tên sản phẩm").';
+    document.getElementById('importPreviewTable').innerHTML = '';
+    btn.disabled = true;
+    return;
   }
-  return results;
+  wrap.style.display = 'block';
+  document.getElementById('importSummary').textContent = `Tìm thấy ${importParsedRows.length} dòng hàng hóa hợp lệ. Kiểm tra nhanh 5 dòng đầu bên dưới trước khi nhập.`;
+  const preview = importParsedRows.slice(0,5);
+  document.getElementById('importPreviewTable').innerHTML = `
+    <thead><tr><th>Tên sản phẩm</th><th>Hệ thống</th><th>Thương hiệu</th><th>Xuất xứ</th><th>Mã hàng</th><th class="num">Số lượng</th><th class="num">Đơn giá</th></tr></thead>
+    <tbody>
+      ${preview.map(r=>`<tr><td>${r['Tên sản phẩm']||''}</td><td>${r['Hệ thống']||''}</td><td>${r['Thương hiệu']||''}</td><td>${r['Xuất xứ']||''}</td><td>${r['Mã hàng']||''}</td><td class="num">${fmtNum(r['Số lượng'])}</td><td class="num">${fmtMoney(r['Đơn giá'])}</td></tr>`).join('')}
+    </tbody>
+  `;
+  btn.disabled = false;
 }
 
-// ===================== AI ANALYSIS =====================
-async function analyzeRequest() {
-  const prompt = document.getElementById('promptInput').value.trim();
-  if (!prompt) return alert('Vui lòng nhập yêu cầu báo giá');
-  if (products.length === 0) return alert('Vui lòng tải file Excel trước');
-  
-  const btn = document.getElementById('analyzeBtn');
-  const thinking = document.getElementById('thinkingBar');
-  const thinkingText = document.getElementById('thinkingText');
-  
-  btn.disabled = true;
-  thinking.classList.add('active');
-  setStatus('loading', 'AI đang phân tích yêu cầu...');
-  
-  const steps = [
-    'AI đang phân tích yêu cầu...',
-    'Đang tìm kiếm sản phẩm phù hợp...',
-    'Đang ước tính số lượng...',
-    'Đang tạo bảng báo giá...'
-  ];
-  let step = 0;
-  const stepInterval = setInterval(() => {
-    step = (step + 1) % steps.length;
-    thinkingText.textContent = steps[step];
-  }, 1800);
-  
-  try {
-    // Build concise product catalog for AI
-    const catalog = buildCatalogForAI(prompt);
-    
-    const systemPrompt = `Bạn là chuyên gia tư vấn kỹ thuật của TID (công ty phân phối thiết bị IT và an ninh). 
-Nhiệm vụ: phân tích yêu cầu của khách hàng và tạo bảng báo giá phù hợp từ danh mục sản phẩm.
+function confirmImport(){
+  const projectId = document.getElementById('importProjectId').value;
+  if(!projectId || importParsedRows.length === 0) return;
+  const financeAllowed = can('editFinance');
+  importParsedRows.forEach(r=>{
+    const status = ITEM_STATUS_OPTIONS.includes(r['Tình trạng T&C']) ? r['Tình trạng T&C'] : 'Chưa triển khai';
+    state.items.push({
+      id: uid('it'),
+      projectId,
+      name: String(r['Tên sản phẩm']||'').trim(),
+      system: String(r['Hệ thống']||'').trim(),
+      brand: String(r['Thương hiệu']||'').trim(),
+      origin: String(r['Xuất xứ']||'').trim(),
+      code: String(r['Mã hàng']||'').trim(),
+      spec: String(r['Thông số kỹ thuật']||'').trim(),
+      qty: Number(r['Số lượng'])||0,
+      unit: String(r['Đơn vị tính']||'').trim(),
+      price: financeAllowed ? (Number(r['Đơn giá'])||0) : 0,
+      doc: financeAllowed ? String(r['Chứng từ cung cấp']||'').trim() : '',
+      status,
+    });
+  });
+  saveState();
+  closeModal('importModal');
+  renderMain();
+  toast(`Đã nhập ${importParsedRows.length} hàng hóa từ Excel.`);
+  importParsedRows = [];
+}
 
-QUY TẮC:
-1. Chỉ chọn sản phẩm có trong danh mục (dùng đúng id)
-2. Ước tính số lượng hợp lý theo quy mô dự án
-3. Chọn sản phẩm phù hợp nhất về tính năng và giá
-4. Thêm phụ kiện/linh kiện cần thiết kèm theo
-5. Ghi chú ngắn gọn lý do chọn sản phẩm
+/* ================= BULK DELIVERY UPDATE ================= */
+function openDeliveryUpdateModal(projectId){
+  if(!can('manageDeliveries')){ toast('Bạn không có quyền cập nhật giao hàng.', true); return; }
+  const items = state.items.filter(i=>i.projectId===projectId);
+  if(items.length === 0){ toast('Dự án chưa có hàng hóa nào để cập nhật giao hàng.', true); return; }
+  document.getElementById('dvUpdProjectId').value = projectId;
+  document.getElementById('dvUpdBatch').value = '';
+  document.getElementById('dvUpdDate').value = '';
+  document.getElementById('dvUpdNote').value = '';
+  document.getElementById('dvUpdTableBody').innerHTML = items.map(it=>{
+    const delivered = itemDeliveredQty(it.id);
+    const remaining = Math.max(it.qty - delivered, 0);
+    return `
+      <tr>
+        <td class="center"><input type="checkbox" class="dvUpdCheck" data-item="${it.id}"></td>
+        <td>
+          <div class="row-name">${it.name}</div>
+          <div class="row-code">${it.code||''}</div>
+        </td>
+        <td>${it.system||'—'}</td>
+        <td class="num">${fmtNum(remaining)} ${it.unit||''}</td>
+        <td class="num"><input type="number" min="0" step="any" class="dvUpdQty" data-item="${it.id}" style="width:100px; text-align:right;" placeholder="0"></td>
+      </tr>
+    `;
+  }).join('');
+  openModal('deliveryUpdateModal');
+}
+function submitDeliveryUpdate(){
+  const projectId = document.getElementById('dvUpdProjectId').value;
+  const batchNo = document.getElementById('dvUpdBatch').value.trim() || 'Đợt giao hàng';
+  const date = document.getElementById('dvUpdDate').value;
+  const note = document.getElementById('dvUpdNote').value.trim();
+  const rows = document.querySelectorAll('#dvUpdTableBody tr');
+  let count = 0;
+  rows.forEach(tr=>{
+    const checked = tr.querySelector('.dvUpdCheck').checked;
+    const qty = Number(tr.querySelector('.dvUpdQty').value) || 0;
+    const itemId = tr.querySelector('.dvUpdCheck').dataset.item;
+    if(checked && qty > 0){
+      state.deliveries.push({id:uid('dv'), itemId, batchNo, date, qty, note});
+      count++;
+    }
+  });
+  if(count === 0){ toast('Vui lòng chọn ít nhất 1 hàng hóa và nhập số lượng giao > 0.', true); return; }
+  saveState();
+  closeModal('deliveryUpdateModal');
+  renderMain();
+  toast(`Đã cập nhật giao hàng cho ${count} hàng hóa.`);
+}
 
-Trả về JSON hợp lệ (không markdown), định dạng:
-{
-  "items": [
-    {"id": <number>, "qty": <number>, "note": "<lý do>"}
-  ],
-  "summary": "<tóm tắt giải pháp ngắn 1-2 câu>"
+/* ================= USERS ================= */
+function openUsersModal(){
+  if(!can('manageUsers')){ toast('Bạn không có quyền quản lý người dùng.', true); return; }
+  renderUsersTable();
+  openModal('usersModal');
+}
+function renderUsersTable(){
+  document.getElementById('usersTableBody').innerHTML = state.users.map(u=>`
+    <tr>
+      <td>${u.name}</td>
+      <td class="mono">${u.username}</td>
+      <td><span class="stamp stamp-blue">${u.role}</span></td>
+      <td>${state.users.length>1 ? `<button class="icon-link" onclick="removeUser('${u.id}')">Xóa</button>` : ''}</td>
+    </tr>
+  `).join('');
+}
+function addUser(){
+  const name = document.getElementById('usrName').value.trim();
+  const username = document.getElementById('usrUsername').value.trim();
+  const password = document.getElementById('usrPassword').value;
+  const role = document.getElementById('usrRole').value;
+  if(!name || !username || !password){ toast('Vui lòng nhập đầy đủ thông tin người dùng.', true); return; }
+  if(state.users.some(u=>u.username===username)){ toast('Tài khoản đã tồn tại.', true); return; }
+  state.users.push({id:uid('u'), name, username, password, role});
+  document.getElementById('usrName').value=''; document.getElementById('usrUsername').value=''; document.getElementById('usrPassword').value='';
+  saveState();
+  renderUsersTable();
+  toast('Đã thêm người dùng.');
+}
+function removeUser(id){
+  if(id === state.session.userId){ toast('Không thể xóa tài khoản đang đăng nhập.', true); return; }
+  if(!confirm('Xóa người dùng này?')) return;
+  state.users = state.users.filter(u=>u.id!==id);
+  saveState();
+  renderUsersTable();
+}
+
+/* ================= GOOGLE SHEETS SYNC ================= */
+const APPS_SCRIPT_CODE = `function doGet(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var out = {};
+  ['projects','items','poBatches','deliveries','users'].forEach(function(name){
+    out[name] = readSheet(ss, name);
+  });
+  return ContentService.createTextOutput(JSON.stringify(out))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  var body = JSON.parse(e.postData.contents);
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  ['projects','items','poBatches','deliveries','users'].forEach(function(name){
+    if (body[name]) writeSheet(ss, name, body[name]);
+  });
+  return ContentService.createTextOutput(JSON.stringify({ok:true}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function readSheet(ss, name){
+  var sheet = ss.getSheetByName(name);
+  if (!sheet || sheet.getLastRow() < 2) return [];
+  var values = sheet.getDataRange().getValues();
+  var headers = values.shift();
+  return values.map(function(row){
+    var obj = {};
+    headers.forEach(function(h, i){ obj[h] = row[i]; });
+    return obj;
+  });
+}
+
+function writeSheet(ss, name, rows){
+  var sheet = ss.getSheetByName(name);
+  if (!sheet) sheet = ss.insertSheet(name);
+  sheet.clear();
+  if (!rows.length) return;
+  var headers = Object.keys(rows[0]);
+  sheet.appendRow(headers);
+  rows.forEach(function(row){
+    sheet.appendRow(headers.map(function(h){ return row[h]; }));
+  });
 }`;
 
-    const userMsg = `YÊU CẦU: ${prompt}
+let autoSyncTimer = null;
+let autoSyncBusy = false;
 
-DANH MỤC SẢN PHẨM:
-${catalog}`;
-
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+function openSyncModal(){
+  if(!can('manageSettings')){ toast('Chỉ Admin được cấu hình đồng bộ.', true); return; }
+  document.getElementById('appsScriptCode').textContent = APPS_SCRIPT_CODE;
+  document.getElementById('webAppUrl').value = state.sheetsConfig.webAppUrl || '';
+  document.getElementById('autoSyncToggle').checked = !!state.sheetsConfig.autoSync;
+  updateSyncStatusNote();
+  openModal('syncModal');
+}
+function updateSyncStatusNote(msg){
+  const note = document.getElementById('syncStatusNote');
+  if(msg){ note.textContent = msg; return; }
+  if(!state.sheetsConfig.webAppUrl){
+    note.textContent = 'Chưa kết nối Google Sheets — dữ liệu chỉ đang lưu trên trình duyệt này.';
+  } else if(state.sheetsConfig.autoSync){
+    note.textContent = 'Đang tự động đồng bộ mỗi 30 giây' + (state.sheetsConfig.lastSync ? (' — lần gần nhất lúc ' + state.sheetsConfig.lastSync) : '') + '.';
+  } else {
+    note.textContent = 'Đã cấu hình URL Web App. Bấm "Đẩy dữ liệu" hoặc "Tải dữ liệu", hoặc bật tự động đồng bộ ở dưới.';
+  }
+}
+function copyScript(){
+  navigator.clipboard.writeText(APPS_SCRIPT_CODE).then(()=>toast('Đã sao chép mã Apps Script.'));
+}
+function saveWebAppUrl(){
+  state.sheetsConfig.webAppUrl = document.getElementById('webAppUrl').value.trim();
+  saveState();
+  toast('Đã lưu URL kết nối.');
+  updateSyncStatusNote();
+  restartAutoSync();
+}
+function toggleAutoSync(){
+  if(!can('manageSettings')){ toast('Chỉ Admin được cấu hình đồng bộ.', true); document.getElementById('autoSyncToggle').checked = state.sheetsConfig.autoSync; return; }
+  state.sheetsConfig.autoSync = document.getElementById('autoSyncToggle').checked;
+  if(state.sheetsConfig.autoSync && !state.sheetsConfig.webAppUrl){
+    toast('Vui lòng nhập và lưu URL Web App trước khi bật tự động đồng bộ.', true);
+    state.sheetsConfig.autoSync = false;
+    document.getElementById('autoSyncToggle').checked = false;
+  }
+  saveState();
+  updateSyncStatusNote();
+  restartAutoSync();
+}
+function restartAutoSync(){
+  if(autoSyncTimer){ clearInterval(autoSyncTimer); autoSyncTimer = null; }
+  if(state.sheetsConfig.autoSync && state.sheetsConfig.webAppUrl && currentUser()){
+    autoSyncTimer = setInterval(runAutoSyncCycle, 30000);
+  }
+}
+async function runAutoSyncCycle(){
+  if(autoSyncBusy || !currentUser()) return;
+  autoSyncBusy = true;
+  try{
+    await pushToSheets(true);
+    await pullFromSheets(true);
+    state.sheetsConfig.lastSync = new Date().toLocaleTimeString('vi-VN');
+    saveState();
+    if(document.getElementById('syncModal').classList.contains('show')) updateSyncStatusNote();
+  }catch(err){
+    /* im lặng bỏ qua lỗi của 1 chu kỳ, sẽ thử lại ở chu kỳ 30s tiếp theo */
+  }
+  autoSyncBusy = false;
+}
+async function pushToSheets(silent){
+  const url = state.sheetsConfig.webAppUrl;
+  if(!url){ if(!silent) toast('Vui lòng nhập URL Web App trước.', true); return; }
+  try{
+    await fetch(url, {
+      method:'POST',
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userMsg }]
+        projects: state.projects, items: state.items, poBatches: state.poBatches,
+        deliveries: state.deliveries, users: state.users
       })
     });
-    
-    const data = await response.json();
-    const text = data.content?.[0]?.text || '';
-    
-    // Parse JSON from response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('AI không trả về dữ liệu hợp lệ');
-    
-    const result = JSON.parse(jsonMatch[0]);
-    
-    // Build quote items
-    const newItems = [];
-    for (const item of (result.items || [])) {
-      const product = products.find(p => p.id === item.id);
-      if (product) {
-        newItems.push({
-          ...product,
-          qty: item.qty || 1,
-          note: item.note || '',
-          itemId: Date.now() + Math.random()
-        });
-      }
-    }
-    
-    if (newItems.length > 0) {
-      quoteItems = [...quoteItems, ...newItems];
-      renderTable();
-      setStatus('ready', `✦ AI đã thêm ${newItems.length} sản phẩm · ${result.summary || ''}`);
-    } else {
-      setStatus('error', 'Không tìm được sản phẩm phù hợp. Thử mô tả cụ thể hơn.');
-    }
-    
-  } catch(err) {
-    setStatus('error', 'Lỗi: ' + err.message);
-  } finally {
-    clearInterval(stepInterval);
-    btn.disabled = false;
-    thinking.classList.remove('active');
+    if(!silent) toast('Đã đẩy dữ liệu lên Google Sheets.');
+  }catch(err){
+    if(!silent) toast('Lỗi khi đẩy dữ liệu. Kiểm tra lại URL và quyền truy cập.', true);
+    else throw err;
+  }
+}
+async function pullFromSheets(silent){
+  const url = state.sheetsConfig.webAppUrl;
+  if(!url){ if(!silent) toast('Vui lòng nhập URL Web App trước.', true); return; }
+  try{
+    const res = await fetch(url);
+    const data = await res.json();
+    if(data.projects) state.projects = data.projects.map(p=>({...p, progressPct:Number(p.progressPct)||0}));
+    if(data.items) state.items = data.items.map(i=>({...i, qty:Number(i.qty)||0, price:Number(i.price)||0}));
+    if(data.poBatches) state.poBatches = data.poBatches.map(p=>({...p, qty:Number(p.qty)||0}));
+    if(data.deliveries) state.deliveries = data.deliveries.map(d=>({...d, qty:Number(d.qty)||0}));
+    if(data.users && data.users.length) state.users = data.users;
+    saveState();
+    boot();
+    if(!silent) toast('Đã tải dữ liệu từ Google Sheets.');
+  }catch(err){
+    if(!silent) toast('Lỗi khi tải dữ liệu. Kiểm tra lại URL và quyền truy cập.', true);
+    else throw err;
   }
 }
 
-function buildCatalogForAI(prompt) {
-  // Score products by relevance to prompt
-  const keywords = prompt.toLowerCase().split(/\s+/);
-  
-  const scored = products.map(p => {
-    const text = (p.display + ' ' + p.category + ' ' + p.name).toLowerCase();
-    let score = keywords.filter(k => k.length > 2 && text.includes(k)).length;
-    // Boost exact category matches
-    if (keywords.some(k => p.category.toLowerCase().includes(k))) score += 5;
-    return { ...p, score };
-  }).filter(p => p.score > 0).sort((a, b) => b.score - a.score).slice(0, 120);
-  
-  // Also include top products by category breadth if few matches
-  if (scored.length < 30) {
-    const cats = [...new Set(keywords.map(k => {
-      const matches = products.filter(p => p.category.toLowerCase().includes(k));
-      return matches.slice(0, 5);
-    }).flat().map(p => p.category))];
-    const extra = products.filter(p => cats.includes(p.category)).slice(0, 60);
-    scored.push(...extra.filter(e => !scored.find(s => s.id === e.id)));
+/* ================= INIT ================= */
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape'){
+    document.querySelectorAll('.overlay.show').forEach(o=>o.classList.remove('show'));
   }
-  
-  return scored.slice(0, 100).map(p => 
-    `[${p.id}] ${p.category} | ${p.display} | ${formatVND(p.price)}/${p.unit}`
-  ).join('\n');
-}
-
-// ===================== TABLE =====================
-function renderTable() {
-  const container = document.getElementById('quoteContainer');
-  
-  if (quoteItems.length === 0) {
-    container.innerHTML = `<div class="quote-empty"><div class="empty-icon">🗂️</div><p>Tải file Excel và nhập yêu cầu<br>để AI tự động tạo báo giá</p></div>`;
-    updateStats();
-    return;
-  }
-  
-  let subtotal = 0;
-  const rows = quoteItems.map((item, idx) => {
-    const lineTotal = item.price * item.qty;
-    subtotal += lineTotal;
-    return `<tr>
-      <td class="stt-cell">${idx + 1}</td>
-      <td class="product-cell">
-        <div class="product-name">${escHtml(item.display)}</div>
-        <div class="product-cat"><span class="ai-badge">✦ AI</span> ${escHtml(item.category)}</div>
-      </td>
-      <td class="qty-cell">
-        <input class="qty-input" type="number" min="1" value="${item.qty}" 
-          onchange="updateQty('${item.itemId}', this.value)" />
-      </td>
-      <td class="price-cell">${formatVND(item.price)}</td>
-      <td class="total-cell">${formatVND(lineTotal)}</td>
-      <td class="note-cell">
-        <input class="note-input" type="text" value="${escHtml(item.note)}" 
-          placeholder="Ghi chú..." onchange="updateNote('${item.itemId}', this.value)" />
-      </td>
-      <td class="del-cell">
-        <button class="del-btn no-print" onclick="removeItem('${item.itemId}')">✕</button>
-      </td>
-    </tr>`;
-  }).join('');
-  
-  const discount = parseFloat(document.getElementById('discountPct')?.value || 0);
-  const discountAmt = subtotal * discount / 100;
-  const afterDiscount = subtotal - discountAmt;
-  const vat = vatEnabled ? afterDiscount * 0.1 : 0;
-  const total = afterDiscount + vat;
-  
-  container.innerHTML = `
-    <div class="quote-table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Sản phẩm</th>
-            <th>SL</th>
-            <th style="text-align:right">Đơn giá</th>
-            <th style="text-align:right">Thành tiền</th>
-            <th>Ghi chú</th>
-            <th class="no-print"></th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-        <tfoot>
-          ${discount > 0 ? `
-          <tr class="summary-row">
-            <td colspan="4" style="text-align:right;font-weight:600;color:var(--muted)">Tổng cộng</td>
-            <td class="total-cell">${formatVND(subtotal)}</td>
-            <td colspan="2"></td>
-          </tr>
-          <tr class="summary-row">
-            <td colspan="4" style="text-align:right;font-weight:600;color:var(--danger)">Chiết khấu (${discount}%)</td>
-            <td class="total-cell" style="color:var(--danger)">-${formatVND(discountAmt)}</td>
-            <td colspan="2"></td>
-          </tr>` : ''}
-          ${vatEnabled ? `
-          <tr class="summary-row">
-            <td colspan="4" style="text-align:right;font-weight:600;color:var(--muted)">Sau chiết khấu</td>
-            <td class="total-cell">${formatVND(afterDiscount)}</td>
-            <td colspan="2"></td>
-          </tr>
-          <tr class="summary-row">
-            <td colspan="4" style="text-align:right;font-weight:600;color:var(--muted)">VAT (10%)</td>
-            <td class="total-cell" style="color:var(--muted)">${formatVND(vat)}</td>
-            <td colspan="2"></td>
-          </tr>` : ''}
-          <tr class="summary-row">
-            <td colspan="4" style="text-align:right;font-weight:700;font-size:14px;">
-              TỔNG THANH TOÁN ${vatEnabled ? '(có VAT)' : '(chưa VAT)'}
-            </td>
-            <td colspan="2"><span class="grand-total">${formatVND(total)}</span></td>
-            <td></td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>`;
-  
-  updateStats();
-}
-
-function updateStats() {
-  const items = quoteItems.length;
-  const qty = quoteItems.reduce((s, i) => s + (i.qty || 0), 0);
-  const subtotal = quoteItems.reduce((s, i) => s + i.price * i.qty, 0);
-  const discount = parseFloat(document.getElementById('discountPct')?.value || 0);
-  const afterDiscount = subtotal * (1 - discount/100);
-  const total = afterDiscount * (vatEnabled ? 1.1 : 1);
-  
-  document.getElementById('statItems').textContent = items;
-  document.getElementById('statQty').textContent = qty;
-  document.getElementById('statSubtotal').textContent = formatVND(subtotal);
-  document.getElementById('statTotal').textContent = formatVND(total);
-  document.getElementById('itemCountBadge').textContent = items + ' mục';
-  
-  const discountPreview = document.getElementById('discountPreview');
-  if (discountPreview && discount > 0) {
-    discountPreview.textContent = `-${formatVND(subtotal * discount / 100)}`;
-  } else if (discountPreview) {
-    discountPreview.textContent = '';
-  }
-}
-
-function recalcAll() { renderTable(); }
-
-function updateQty(itemId, val) {
-  const item = quoteItems.find(i => i.itemId == itemId);
-  if (item) { item.qty = Math.max(1, parseInt(val) || 1); updateStats(); }
-}
-
-function updateNote(itemId, val) {
-  const item = quoteItems.find(i => i.itemId == itemId);
-  if (item) item.note = val;
-}
-
-function removeItem(itemId) {
-  quoteItems = quoteItems.filter(i => i.itemId != itemId);
-  renderTable();
-}
-
-function addManualRow() {
-  if (products.length === 0) {
-    // Add blank row
-    quoteItems.push({
-      id: -1, category: 'Thủ công', model: '', name: 'Sản phẩm mới',
-      display: 'Nhập tên sản phẩm', price: 0, unit: 'cái',
-      qty: 1, note: '', itemId: Date.now() + Math.random()
-    });
-    renderTable();
-    return;
-  }
-  const name = prompt('Tìm kiếm sản phẩm (nhập từ khóa):');
-  if (!name) return;
-  const kw = name.toLowerCase();
-  const matches = products.filter(p => p.display.toLowerCase().includes(kw) || p.category.toLowerCase().includes(kw)).slice(0, 10);
-  if (matches.length === 0) return alert('Không tìm thấy sản phẩm');
-  
-  const list = matches.map((p, i) => `${i+1}. ${p.display} (${p.category}) - ${formatVND(p.price)}`).join('\n');
-  const idx = parseInt(prompt(`Chọn số thứ tự:\n${list}`)) - 1;
-  if (idx >= 0 && idx < matches.length) {
-    quoteItems.push({ ...matches[idx], qty: 1, note: '', itemId: Date.now() + Math.random() });
-    renderTable();
-  }
-}
-
-function clearAll() {
-  if (confirm('Xóa toàn bộ bảng báo giá?')) {
-    quoteItems = [];
-    renderTable();
-  }
-}
-
-function toggleVAT() {
-  vatEnabled = !vatEnabled;
-  document.getElementById('vatToggle').classList.toggle('on', vatEnabled);
-  renderTable();
-}
-
-// ===================== EXPORT =====================
-function exportExcel() {
-  if (quoteItems.length === 0) return alert('Bảng báo giá đang trống');
-  
-  const wb = XLSX.utils.book_new();
-  const custName = document.getElementById('custName').value || 'Khách hàng';
-  const quoteNo = document.getElementById('quoteNo').value || 'BG';
-  const quoteDate = document.getElementById('quoteDate').value;
-  const project = document.getElementById('projectName').value || '';
-  const validity = document.getElementById('validity').value;
-  const payment = document.getElementById('paymentTerms').value;
-  const discount = parseFloat(document.getElementById('discountPct').value || 0);
-  
-  const wsData = [];
-  
-  // Header
-  wsData.push(['BẢNG BÁO GIÁ', '', '', '', '', '', '']);
-  wsData.push(['Số BG:', quoteNo, '', 'Ngày:', quoteDate, '', '']);
-  wsData.push(['Khách hàng:', custName, '', 'Dự án:', project, '', '']);
-  wsData.push(['Hiệu lực:', validity, '', 'Thanh toán:', payment, '', '']);
-  wsData.push([]);
-  wsData.push(['STT', 'Danh mục', 'Tên sản phẩm / Mã hàng', 'ĐVT', 'Số lượng', 'Đơn giá (VNĐ)', 'Thành tiền (VNĐ)', 'Ghi chú']);
-  
-  let subtotal = 0;
-  quoteItems.forEach((item, idx) => {
-    const lineTotal = item.price * item.qty;
-    subtotal += lineTotal;
-    wsData.push([idx + 1, item.category, item.display, item.unit, item.qty, item.price, lineTotal, item.note]);
-  });
-  
-  wsData.push([]);
-  wsData.push(['', '', '', '', '', 'Tổng cộng', subtotal, '']);
-  
-  if (discount > 0) {
-    const discountAmt = subtotal * discount / 100;
-    wsData.push(['', '', '', '', '', `Chiết khấu ${discount}%`, -discountAmt, '']);
-    wsData.push(['', '', '', '', '', 'Sau chiết khấu', subtotal - discountAmt, '']);
-  }
-  
-  const afterDiscount = subtotal * (1 - discount/100);
-  if (vatEnabled) {
-    wsData.push(['', '', '', '', '', 'VAT (10%)', afterDiscount * 0.1, '']);
-    wsData.push(['', '', '', '', '', 'TỔNG THANH TOÁN', afterDiscount * 1.1, '']);
-  } else {
-    wsData.push(['', '', '', '', '', 'TỔNG CỘNG (chưa VAT)', afterDiscount, '']);
-  }
-  
-  wsData.push([]);
-  wsData.push(['Ghi chú: Giá trên chưa bao gồm VAT trừ khi có ghi chú riêng. Báo giá có hiệu lực ' + validity]);
-  wsData.push(['Liên hệ: TID - Tel: | Email: | Website: tid.com.vn']);
-  
-  const ws = XLSX.utils.aoa_to_sheet(wsData);
-  
-  // Column widths
-  ws['!cols'] = [{ wch: 5 }, { wch: 20 }, { wch: 50 }, { wch: 8 }, { wch: 8 }, { wch: 18 }, { wch: 20 }, { wch: 30 }];
-  
-  XLSX.utils.book_append_sheet(wb, ws, 'Báo Giá');
-  XLSX.writeFile(wb, `BaoGia_${quoteNo}_${custName.replace(/\s+/g, '_')}.xlsx`);
-}
-
-// ===================== HELPERS =====================
-function formatVND(n) {
-  if (!n && n !== 0) return '—';
-  return new Intl.NumberFormat('vi-VN').format(Math.round(n)) + 'đ';
-}
-
-function escHtml(s) {
-  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-function setStatus(type, msg) {
-  const dot = document.getElementById('statusDot');
-  const text = document.getElementById('statusText');
-  dot.className = 'status-dot' + (type === 'loading' ? ' loading' : type === 'error' ? ' error' : '');
-  text.textContent = msg;
-}
-
-function setPrompt(el) {
-  document.getElementById('promptInput').value = el.textContent.replace(/^[^\s]+\s/, '');
-  document.getElementById('promptInput').focus();
-}
+});
+document.getElementById('loginPass').addEventListener('keydown', (e)=>{ if(e.key==='Enter') handleLogin(); });
+saveState();
+boot();
 </script>
 </body>
 </html>
