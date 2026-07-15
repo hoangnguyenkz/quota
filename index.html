@@ -617,7 +617,7 @@ function defaultState(){
       {id:uid('dv'), itemId:itemId2, batchNo:'Đợt 1', date:'2026-04-25', qty:500, note:''},
       {id:uid('dv'), itemId:itemId2, batchNo:'Đợt 2', date:'2026-05-15', qty:300, note:'Giao đủ'},
     ],
-    sheetsConfig: {webAppUrl:'', autoSync:false},
+    sheetsConfig: {webAppUrl:'https://script.google.com/macros/s/AKfycbxlrXd_BHAfZdoTiT3jjdBUyeOzymZFPZdIXrDURJCex0SFNLo8CRwBEPG-9NNhlAoIlg/exec', autoSync:false},
     permissions: defaultPermissions(),
     session: {userId:null},
     ui: {currentProjectId:demoProjId}
@@ -638,6 +638,9 @@ if(!state.ui) state.ui = {currentProjectId: (state.projects[0]||{}).id || null};
 if(!state.ui.itemFilters) state.ui.itemFilters = {search:'', system:'', status:'', delivery:''};
 if(!state.sheetsConfig) state.sheetsConfig = {webAppUrl:'', autoSync:false};
 if(state.sheetsConfig.autoSync === undefined) state.sheetsConfig.autoSync = false;
+if(!state.sheetsConfig.webAppUrl){
+  state.sheetsConfig.webAppUrl = 'https://script.google.com/macros/s/AKfycbxlrXd_BHAfZdoTiT3jjdBUyeOzymZFPZdIXrDURJCex0SFNLo8CRwBEPG-9NNhlAoIlg/exec';
+}
 if(!state.permissions) state.permissions = defaultPermissions();
 state.projects.forEach(p=>{ if(p.system===undefined) p.system=''; if(p.progress===undefined) p.progress='Chưa khởi công'; if(p.progressPct===undefined) p.progressPct=0; });
 state.items.forEach(i=>{ if(i.system===undefined) i.system=''; if(i.brand===undefined) i.brand=''; if(i.origin===undefined) i.origin=''; });
