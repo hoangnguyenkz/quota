@@ -185,6 +185,7 @@
   table.data-table tbody tr:hover{background:var(--paper-50);}
   table.data-table td.num, table.data-table th.num{text-align:right; font-family:'IBM Plex Mono';}
   table.data-table td.center{text-align:center;}
+  .center{text-align:center;}
   .row-code{font-family:'IBM Plex Mono'; font-size:12px; color:var(--ink-600);}
   .row-name{font-weight:600; color:var(--navy-900);}
   .row-spec{font-size:11.5px; color:var(--steel-500); margin-top:2px;}
@@ -541,21 +542,12 @@
         </div>
         <button class="btn btn-dark btn-sm" onclick="addUser()">+ Thêm người dùng</button>
       </div>
-      <div class="subhead">Ma trận phân quyền</div>
-      <table class="role-table">
+      <div class="subhead">Ma trận phân quyền <span style="font-weight:400; text-transform:none; letter-spacing:0; color:var(--steel-500);">(Admin luôn có toàn quyền; tick/bỏ tick để tùy chỉnh cho Sales / Kế toán / Viewer)</span></div>
+      <table class="role-table" id="permTable">
         <thead><tr><th>Chức năng</th><th>Admin</th><th>Sales</th><th>Kế toán</th><th>Viewer</th></tr></thead>
-        <tbody>
-          <tr><td>Xem dữ liệu</td><td>✔</td><td>✔</td><td>✔</td><td>✔</td></tr>
-          <tr><td>Thêm / sửa dự án</td><td>✔</td><td>✔</td><td>—</td><td>—</td></tr>
-          <tr><td>Xóa dự án</td><td>✔</td><td>—</td><td>—</td><td>—</td></tr>
-          <tr><td>Thêm / sửa hàng hóa</td><td>✔</td><td>✔</td><td>✔</td><td>—</td></tr>
-          <tr><td>Xóa hàng hóa</td><td>✔</td><td>✔</td><td>—</td><td>—</td></tr>
-          <tr><td>Sửa đơn giá &amp; chứng từ cung cấp</td><td>✔</td><td>—</td><td>✔</td><td>—</td></tr>
-          <tr><td>Quản lý PO / đợt giao hàng</td><td>✔</td><td>✔</td><td>—</td><td>—</td></tr>
-          <tr><td>Quản lý người dùng</td><td>✔</td><td>—</td><td>—</td><td>—</td></tr>
-          <tr><td>Cấu hình đồng bộ Google Sheets</td><td>✔</td><td>—</td><td>—</td><td>—</td></tr>
-        </tbody>
+        <tbody id="permTableBody"></tbody>
       </table>
+      <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="resetPermissions()">Khôi phục phân quyền mặc định</button>
     </div>
     <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal('usersModal')">Đóng</button></div>
   </div>
@@ -626,6 +618,7 @@ function defaultState(){
       {id:uid('dv'), itemId:itemId2, batchNo:'Đợt 2', date:'2026-05-15', qty:300, note:'Giao đủ'},
     ],
     sheetsConfig: {webAppUrl:'', autoSync:false},
+    permissions: defaultPermissions(),
     session: {userId:null},
     ui: {currentProjectId:demoProjId}
   };
@@ -642,29 +635,45 @@ function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); 
 
 let state = loadState() || defaultState();
 if(!state.ui) state.ui = {currentProjectId: (state.projects[0]||{}).id || null};
-if(!state.ui.itemFilters) state.ui.itemFilters = {search:'', system:'', status:''};
+if(!state.ui.itemFilters) state.ui.itemFilters = {search:'', system:'', status:'', delivery:''};
 if(!state.sheetsConfig) state.sheetsConfig = {webAppUrl:'', autoSync:false};
 if(state.sheetsConfig.autoSync === undefined) state.sheetsConfig.autoSync = false;
+if(!state.permissions) state.permissions = defaultPermissions();
 state.projects.forEach(p=>{ if(p.system===undefined) p.system=''; if(p.progress===undefined) p.progress='Chưa khởi công'; if(p.progressPct===undefined) p.progressPct=0; });
 state.items.forEach(i=>{ if(i.system===undefined) i.system=''; if(i.brand===undefined) i.brand=''; if(i.origin===undefined) i.origin=''; });
 
 /* ================= PERMISSIONS ================= */
 function currentUser(){ return state.users.find(u => u.id === state.session.userId); }
-const PERM_MATRIX = {
-  manageProjects: ['Admin','Sales'],
-  deleteProjects: ['Admin'],
-  manageItems: ['Admin','Sales','Kế toán'],
-  deleteItems: ['Admin','Sales'],
-  editFinance: ['Admin','Kế toán'],
-  managePO: ['Admin','Sales'],
-  manageDeliveries: ['Admin','Sales'],
-  manageUsers: ['Admin'],
-  manageSettings: ['Admin'],
-};
+const ROLE_LIST = ['Admin','Sales','Kế toán','Viewer'];
+const PERMISSION_ACTIONS = [
+  {key:'manageProjects', label:'Thêm / sửa dự án'},
+  {key:'deleteProjects', label:'Xóa dự án'},
+  {key:'manageItems', label:'Thêm / sửa hàng hóa'},
+  {key:'deleteItems', label:'Xóa hàng hóa'},
+  {key:'editFinance', label:'Sửa đơn giá & chứng từ cung cấp'},
+  {key:'managePO', label:'Quản lý PO đặt hàng'},
+  {key:'manageDeliveries', label:'Quản lý / cập nhật giao hàng'},
+  {key:'manageUsers', label:'Quản lý người dùng'},
+  {key:'manageSettings', label:'Cấu hình đồng bộ Google Sheets'},
+];
+function defaultPermissions(){
+  return {
+    manageProjects: ['Admin','Sales'],
+    deleteProjects: ['Admin'],
+    manageItems: ['Admin','Sales','Kế toán'],
+    deleteItems: ['Admin','Sales'],
+    editFinance: ['Admin','Kế toán'],
+    managePO: ['Admin','Sales'],
+    manageDeliveries: ['Admin','Sales'],
+    manageUsers: ['Admin'],
+    manageSettings: ['Admin'],
+  };
+}
 function can(action){
   const u = currentUser();
   if(!u) return false;
-  return (PERM_MATRIX[action] || []).includes(u.role);
+  if(u.role === 'Admin') return true;
+  return (state.permissions[action] || []).includes(u.role);
 }
 
 /* ================= HELPERS ================= */
@@ -771,7 +780,7 @@ function renderProjectList(){
 }
 function selectProject(id){
   state.ui.currentProjectId = id;
-  state.ui.itemFilters = {search:'', system:'', status:''};
+  state.ui.itemFilters = {search:'', system:'', status:'', delivery:''};
   saveState();
   renderProjectList();
   renderMain();
@@ -859,6 +868,16 @@ function renderFilterBarHtml(items){
           ${ITEM_STATUS_OPTIONS.map(s=>`<option value="${s}" ${f.status===s?'selected':''}>${s}</option>`).join('')}
         </select>
       </div>
+      <div class="field" style="min-width:190px;">
+        <label>Khối lượng đã giao</label>
+        <select id="fltDelivery" onchange="onItemFilterChange()">
+          <option value="">Tất cả</option>
+          <option value="none" ${f.delivery==='none'?'selected':''}>Chưa giao</option>
+          <option value="partial" ${f.delivery==='partial'?'selected':''}>Đã giao một phần</option>
+          <option value="full" ${f.delivery==='full'?'selected':''}>Đã giao đủ</option>
+          <option value="over" ${f.delivery==='over'?'selected':''}>Giao vượt số lượng</option>
+        </select>
+      </div>
       <button class="btn btn-ghost btn-sm" style="align-self:flex-end;" onclick="clearItemFilters()">Xóa lọc</button>
     </div>
   `;
@@ -868,22 +887,30 @@ function onItemFilterChange(){
     search: document.getElementById('fltSearch').value,
     system: document.getElementById('fltSystem').value,
     status: document.getElementById('fltStatus').value,
+    delivery: document.getElementById('fltDelivery').value,
   };
   saveState();
   renderItemsTable();
 }
 function clearItemFilters(){
-  state.ui.itemFilters = {search:'', system:'', status:''};
+  state.ui.itemFilters = {search:'', system:'', status:'', delivery:''};
   saveState();
   renderMain();
 }
 function applyItemFilters(items){
-  const f = state.ui.itemFilters || {search:'', system:'', status:''};
+  const f = state.ui.itemFilters || {search:'', system:'', status:'', delivery:''};
   const q = (f.search||'').trim().toLowerCase();
   return items.filter(it=>{
     if(q && !((it.name+it.code).toLowerCase().includes(q))) return false;
     if(f.system && (it.system||'') !== f.system) return false;
     if(f.status && (it.status||'') !== f.status) return false;
+    if(f.delivery){
+      const delivered = itemDeliveredQty(it.id);
+      if(f.delivery === 'none' && !(delivered <= 0)) return false;
+      if(f.delivery === 'partial' && !(delivered > 0 && delivered < it.qty)) return false;
+      if(f.delivery === 'full' && !(delivered > 0 && delivered === it.qty)) return false;
+      if(f.delivery === 'over' && !(delivered > it.qty && it.qty > 0)) return false;
+    }
     return true;
   });
 }
@@ -917,6 +944,7 @@ function renderItemsTable(){
     <table class="data-table">
       <thead>
         <tr>
+          <th style="width:44px;">STT</th>
           <th>Sản phẩm</th>
           <th>Hệ thống</th>
           <th>Thương hiệu</th>
@@ -933,13 +961,13 @@ function renderItemsTable(){
         </tr>
       </thead>
       <tbody>
-        ${items.map(rowHtml).join('')}
+        ${items.map((it,idx)=>rowHtml(it, idx+1)).join('')}
       </tbody>
     </table>
   `;
 }
 
-function rowHtml(it){
+function rowHtml(it, stt){
   const total = it.qty * it.price;
   const poQty = itemPOTotal(it.id);
   const delivered = itemDeliveredQty(it.id);
@@ -948,6 +976,7 @@ function rowHtml(it){
   const over = delivered > it.qty;
   return `
     <tr>
+      <td class="center mono">${stt}</td>
       <td>
         <div class="row-name">${it.name}</div>
         <div class="row-spec">${it.spec||''}</div>
@@ -1370,6 +1399,46 @@ function submitDeliveryUpdate(){
 function openUsersModal(){
   if(!can('manageUsers')){ toast('Bạn không có quyền quản lý người dùng.', true); return; }
   renderUsersTable();
+  renderPermTable();
+  openModal('usersModal');
+}
+function renderPermTable(){
+  const editable = can('manageUsers');
+  document.getElementById('permTableBody').innerHTML = PERMISSION_ACTIONS.map(a => `
+    <tr>
+      <td>${a.label}</td>
+      ${ROLE_LIST.map(role => {
+        if(role === 'Admin'){
+          return `<td class="center"><input type="checkbox" checked disabled></td>`;
+        }
+        const checked = (state.permissions[a.key]||[]).includes(role);
+        return `<td class="center"><input type="checkbox" ${checked?'checked':''} ${editable?'':'disabled'} onchange="togglePermission('${a.key}','${role}',this.checked)"></td>`;
+      }).join('')}
+    </tr>
+  `).join('');
+}
+function togglePermission(actionKey, role, checked){
+  if(!can('manageUsers')){ toast('Bạn không có quyền chỉnh sửa phân quyền.', true); return; }
+  const arr = state.permissions[actionKey] || (state.permissions[actionKey] = []);
+  if(checked){
+    if(!arr.includes(role)) arr.push(role);
+  } else {
+    state.permissions[actionKey] = arr.filter(r => r !== role);
+  }
+  saveState();
+  toast('Đã cập nhật phân quyền.');
+  renderPermTable();
+  boot();
+  openModal('usersModal');
+}
+function resetPermissions(){
+  if(!can('manageUsers')){ toast('Bạn không có quyền chỉnh sửa phân quyền.', true); return; }
+  if(!confirm('Khôi phục ma trận phân quyền về mặc định ban đầu?')) return;
+  state.permissions = defaultPermissions();
+  saveState();
+  toast('Đã khôi phục phân quyền mặc định.');
+  renderPermTable();
+  boot();
   openModal('usersModal');
 }
 function renderUsersTable(){
