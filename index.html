@@ -168,6 +168,11 @@
   }
   .stat-card .lbl{font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--steel-500); font-family:'IBM Plex Mono';}
   .stat-card .val{font-family:'IBM Plex Mono'; font-size:20px; font-weight:600; color:var(--navy-900); margin-top:4px;}
+  .stat-card-action{cursor:pointer; border-color:var(--orange-600); transition:background .12s ease;}
+  .stat-card-action:hover{background:var(--paper-100);}
+  .stat-card-hint{font-size:10.5px; color:var(--orange-600); margin-top:5px; font-weight:600;}
+  .stat-card-warn .val{color:var(--red-600);}
+  .stat-card-ok .val{color:var(--green-600);}
 
   .filter-bar{display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:12px 14px; margin-bottom:12px; box-shadow:var(--shadow-card);}
   .filter-bar .field{margin-bottom:0;}
@@ -456,6 +461,34 @@
   </div>
 </div>
 
+<!-- PAYMENT MODAL -->
+<div class="overlay" id="paymentModal">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h2>Giá trị thanh toán các đợt</h2>
+      <button class="modal-close" onclick="closeModal('paymentModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="paymentProjectId">
+      <div class="stat-row" id="paymentStats"></div>
+
+      <div class="subhead">Các đợt thanh toán <span id="paymentCountBadge"></span></div>
+      <table class="mini-table">
+        <thead><tr><th>Đợt thanh toán</th><th>Ngày thanh toán</th><th class="num">Giá trị (VNĐ)</th><th>Ghi chú</th><th></th></tr></thead>
+        <tbody id="paymentTableBody"></tbody>
+      </table>
+      <div class="inline-form" id="paymentFormWrap">
+        <div class="field"><label>Tên đợt thanh toán</label><input id="pmBatch" placeholder="Đợt 1"></div>
+        <div class="field"><label>Ngày thanh toán</label><input type="date" id="pmDate"></div>
+        <div class="field"><label>Giá trị (VNĐ)</label><input type="number" min="0" step="any" id="pmAmount"></div>
+        <div class="field"><label>Ghi chú</label><input id="pmNote" placeholder="Số UNC / ghi chú"></div>
+        <button class="btn btn-dark btn-sm" onclick="addPayment()">+ Thêm đợt thanh toán</button>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal('paymentModal')">Đóng</button></div>
+  </div>
+</div>
+
 <!-- IMPORT EXCEL MODAL -->
 <div class="overlay" id="importModal">
   <div class="modal wide">
@@ -617,6 +650,9 @@ function defaultState(){
       {id:uid('dv'), itemId:itemId2, batchNo:'Đợt 1', date:'2026-04-25', qty:500, note:''},
       {id:uid('dv'), itemId:itemId2, batchNo:'Đợt 2', date:'2026-05-15', qty:300, note:'Giao đủ'},
     ],
+    payments: [
+      {id:uid('pm'), projectId:demoProjId, batchNo:'Đợt 1', date:'2026-05-01', amount:100000000, note:'Tạm ứng theo hợp đồng'},
+    ],
     sheetsConfig: {webAppUrl:'https://script.google.com/macros/s/AKfycbxlrXd_BHAfZdoTiT3jjdBUyeOzymZFPZdIXrDURJCex0SFNLo8CRwBEPG-9NNhlAoIlg/exec', autoSync:false},
     permissions: defaultPermissions(),
     session: {userId:null},
@@ -642,6 +678,7 @@ if(!state.sheetsConfig.webAppUrl){
   state.sheetsConfig.webAppUrl = 'https://script.google.com/macros/s/AKfycbxlrXd_BHAfZdoTiT3jjdBUyeOzymZFPZdIXrDURJCex0SFNLo8CRwBEPG-9NNhlAoIlg/exec';
 }
 if(!state.permissions) state.permissions = defaultPermissions();
+if(!state.payments) state.payments = [];
 state.projects.forEach(p=>{ if(p.system===undefined) p.system=''; if(p.progress===undefined) p.progress='Chưa khởi công'; if(p.progressPct===undefined) p.progressPct=0; });
 state.items.forEach(i=>{ if(i.system===undefined) i.system=''; if(i.brand===undefined) i.brand=''; if(i.origin===undefined) i.origin=''; });
 
@@ -656,6 +693,7 @@ const PERMISSION_ACTIONS = [
   {key:'editFinance', label:'Sửa đơn giá & chứng từ cung cấp'},
   {key:'managePO', label:'Quản lý PO đặt hàng'},
   {key:'manageDeliveries', label:'Quản lý / cập nhật giao hàng'},
+  {key:'managePayments', label:'Quản lý giá trị thanh toán'},
   {key:'manageUsers', label:'Quản lý người dùng'},
   {key:'manageSettings', label:'Cấu hình đồng bộ Google Sheets'},
 ];
@@ -668,6 +706,7 @@ function defaultPermissions(){
     editFinance: ['Admin','Kế toán'],
     managePO: ['Admin','Sales'],
     manageDeliveries: ['Admin','Sales'],
+    managePayments: ['Admin','Kế toán'],
     manageUsers: ['Admin'],
     manageSettings: ['Admin'],
   };
@@ -692,6 +731,7 @@ function sum(arr, fn){ return arr.reduce((a,x)=>a+(Number(fn(x))||0),0); }
 function itemPOTotal(itemId){ return sum(state.poBatches.filter(p=>p.itemId===itemId), p=>p.qty); }
 function itemDeliveredQty(itemId){ return sum(state.deliveries.filter(d=>d.itemId===itemId), d=>d.qty); }
 function itemDeliveredValue(itemId, price){ return itemDeliveredQty(itemId) * price; }
+function projectPaidTotal(projectId){ return sum(state.payments.filter(p=>p.projectId===projectId), p=>p.amount); }
 function statusStampClass(status){
   const map = {
     'Chưa triển khai':'stamp-grey', 'Đang đặt hàng':'stamp-amber', 'Đang giao hàng':'stamp-blue',
@@ -806,6 +846,8 @@ function renderMain(){
   const totalContractValue = sum(items, i=>i.qty*i.price);
   const totalDeliveredValue = sum(items, i=>itemDeliveredValue(i.id, i.price));
   const totalRemainingQty = sum(items, i=>Math.max(i.qty - itemDeliveredQty(i.id), 0));
+  const paidTotal = projectPaidTotal(proj.id);
+  const remainingUnpaid = totalDeliveredValue - paidTotal;
 
   main.innerHTML = `
     <div class="page-head">
@@ -835,6 +877,15 @@ function renderMain(){
       <div class="stat-card"><div class="lbl">Giá trị hợp đồng</div><div class="val">${fmtMoney(totalContractValue)}</div></div>
       <div class="stat-card"><div class="lbl">Giá trị đã giao</div><div class="val">${fmtMoney(totalDeliveredValue)}</div></div>
       <div class="stat-card"><div class="lbl">Tổng SL còn lại</div><div class="val">${fmtNum(totalRemainingQty)}</div></div>
+      <div class="stat-card stat-card-action" onclick="openPaymentModal('${proj.id}')">
+        <div class="lbl">Giá trị thanh toán các đợt</div>
+        <div class="val">${fmtMoney(paidTotal)}</div>
+        <div class="stat-card-hint">👆 Bấm để xem / cập nhật</div>
+      </div>
+      <div class="stat-card ${remainingUnpaid>0?'stat-card-warn':'stat-card-ok'}">
+        <div class="lbl">Giá trị còn lại chưa thanh toán</div>
+        <div class="val">${fmtMoney(remainingUnpaid)}</div>
+      </div>
     </div>
 
     ${items.length === 0 ? '' : renderFilterBarHtml(items)}
@@ -1062,6 +1113,7 @@ function deleteProject(id){
   state.items = state.items.filter(i=>i.projectId!==id);
   state.poBatches = state.poBatches.filter(p=>!itemIds.includes(p.itemId));
   state.deliveries = state.deliveries.filter(d=>!itemIds.includes(d.itemId));
+  state.payments = state.payments.filter(p=>p.projectId!==id);
   state.projects = state.projects.filter(p=>p.id!==id);
   if(state.ui.currentProjectId === id) state.ui.currentProjectId = (state.projects[0]||{}).id || null;
   saveState();
@@ -1398,6 +1450,67 @@ function submitDeliveryUpdate(){
   toast(`Đã cập nhật giao hàng cho ${count} hàng hóa.`);
 }
 
+/* ================= PAYMENT MANAGEMENT (per project) ================= */
+let paymentProjectId = null;
+function openPaymentModal(projectId){
+  paymentProjectId = projectId;
+  document.getElementById('paymentProjectId').value = projectId;
+  document.getElementById('pmBatch').value = '';
+  document.getElementById('pmDate').value = '';
+  document.getElementById('pmAmount').value = '';
+  document.getElementById('pmNote').value = '';
+  renderPaymentModal();
+  openModal('paymentModal');
+}
+function renderPaymentModal(){
+  const proj = state.projects.find(p=>p.id===paymentProjectId);
+  if(!proj) return;
+  const items = state.items.filter(i=>i.projectId===proj.id);
+  const deliveredValue = sum(items, i=>itemDeliveredValue(i.id, i.price));
+  const paid = projectPaidTotal(proj.id);
+  const remaining = deliveredValue - paid;
+
+  document.getElementById('paymentStats').innerHTML = `
+    <div class="stat-card"><div class="lbl">Giá trị đã giao</div><div class="val">${fmtMoney(deliveredValue)}</div></div>
+    <div class="stat-card"><div class="lbl">Đã thanh toán</div><div class="val">${fmtMoney(paid)}</div></div>
+    <div class="stat-card ${remaining>0?'stat-card-warn':'stat-card-ok'}"><div class="lbl">Còn lại chưa thanh toán</div><div class="val">${fmtMoney(remaining)}</div></div>
+  `;
+
+  const payments = state.payments.filter(p=>p.projectId===proj.id);
+  document.getElementById('paymentCountBadge').innerHTML = payments.length ? `<span class="badge-count">${payments.length}</span>` : '';
+  document.getElementById('paymentTableBody').innerHTML = payments.length ? payments.map(p=>`
+    <tr>
+      <td>${p.batchNo||'—'}</td>
+      <td>${p.date||'—'}</td>
+      <td class="num">${fmtMoney(p.amount)}</td>
+      <td>${p.note||''}</td>
+      <td>${can('managePayments') ? `<button class="icon-link" onclick="removePayment('${p.id}')">Xóa</button>` : ''}</td>
+    </tr>
+  `).join('') : `<tr><td colspan="5" style="color:var(--steel-500); font-size:12px;">Chưa có đợt thanh toán nào được ghi nhận.</td></tr>`;
+  document.getElementById('paymentFormWrap').style.display = can('managePayments') ? 'flex' : 'none';
+}
+function addPayment(){
+  if(!can('managePayments')){ toast('Bạn không có quyền cập nhật giá trị thanh toán.', true); return; }
+  const batchNo = document.getElementById('pmBatch').value.trim();
+  const date = document.getElementById('pmDate').value;
+  const amount = Number(document.getElementById('pmAmount').value)||0;
+  const note = document.getElementById('pmNote').value.trim();
+  if(!batchNo || amount<=0){ toast('Vui lòng nhập tên đợt thanh toán và giá trị hợp lệ.', true); return; }
+  state.payments.push({id:uid('pm'), projectId:paymentProjectId, batchNo, date, amount, note});
+  document.getElementById('pmBatch').value=''; document.getElementById('pmDate').value=''; document.getElementById('pmAmount').value=''; document.getElementById('pmNote').value='';
+  saveState();
+  renderPaymentModal();
+  renderMain();
+  toast('Đã thêm đợt thanh toán.');
+}
+function removePayment(id){
+  if(!can('managePayments')) return;
+  state.payments = state.payments.filter(p=>p.id!==id);
+  saveState();
+  renderPaymentModal();
+  renderMain();
+}
+
 /* ================= USERS ================= */
 function openUsersModal(){
   if(!can('manageUsers')){ toast('Bạn không có quyền quản lý người dùng.', true); return; }
@@ -1479,7 +1592,7 @@ function removeUser(id){
 const APPS_SCRIPT_CODE = `function doGet(e) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var out = {};
-  ['projects','items','poBatches','deliveries','users'].forEach(function(name){
+  ['projects','items','poBatches','deliveries','payments','users'].forEach(function(name){
     out[name] = readSheet(ss, name);
   });
   return ContentService.createTextOutput(JSON.stringify(out))
@@ -1489,7 +1602,7 @@ const APPS_SCRIPT_CODE = `function doGet(e) {
 function doPost(e) {
   var body = JSON.parse(e.postData.contents);
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  ['projects','items','poBatches','deliveries','users'].forEach(function(name){
+  ['projects','items','poBatches','deliveries','payments','users'].forEach(function(name){
     if (body[name]) writeSheet(ss, name, body[name]);
   });
   return ContentService.createTextOutput(JSON.stringify({ok:true}))
@@ -1592,7 +1705,7 @@ async function pushToSheets(silent){
       method:'POST',
       body: JSON.stringify({
         projects: state.projects, items: state.items, poBatches: state.poBatches,
-        deliveries: state.deliveries, users: state.users
+        deliveries: state.deliveries, payments: state.payments, users: state.users
       })
     });
     if(!silent) toast('Đã đẩy dữ liệu lên Google Sheets.');
@@ -1611,6 +1724,7 @@ async function pullFromSheets(silent){
     if(data.items) state.items = data.items.map(i=>({...i, qty:Number(i.qty)||0, price:Number(i.price)||0}));
     if(data.poBatches) state.poBatches = data.poBatches.map(p=>({...p, qty:Number(p.qty)||0}));
     if(data.deliveries) state.deliveries = data.deliveries.map(d=>({...d, qty:Number(d.qty)||0}));
+    if(data.payments) state.payments = data.payments.map(p=>({...p, amount:Number(p.amount)||0}));
     if(data.users && data.users.length) state.users = data.users;
     saveState();
     boot();
