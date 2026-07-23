@@ -408,6 +408,15 @@
           </select>
         </div>
       </div>
+      <div class="field"><label>Tiến độ nhập hàng</label>
+        <select id="itImportStatus">
+          <option>Chờ duyệt</option>
+          <option>Đang load hàng</option>
+          <option>Kho SG</option>
+          <option>Kho HN</option>
+          <option>Ngưng nhập</option>
+        </select>
+      </div>
       <div class="permission-note" id="itemFieldNote"></div>
     </div>
     <div class="modal-foot">
@@ -674,8 +683,8 @@ function defaultState(){
       {id:demoProjId, code:'[MẪU]-2026-001', name:'Dự án mẫu — Nhà máy xử lý nước ABC', client:'Công ty CP ABC', system:'Hệ thống xử lý nước thải', status:'Đang triển khai', progress:'Đang lắp đặt thiết bị', progressPct:60, note:'Dự án mẫu để tham khảo, có thể xóa.'}
     ],
     items: [
-      {id:itemId1, projectId:demoProjId, name:'Máy bơm ly tâm trục ngang', code:'PUMP-CN-050', system:'Hệ thống cơ khí', brand:'Grundfos', origin:'Đan Mạch', spec:'Q=50m3/h, H=32m, 3 pha, 380V, IP55', qty:4, unit:'bộ', price:38500000, doc:'CO/CQ, Invoice INV-0021', status:'Đang giao hàng'},
-      {id:itemId2, projectId:demoProjId, name:'Ống thép mạ kẽm D114', code:'PIPE-GS-114', system:'Hệ thống cấp thoát nước', brand:'Hoa Sen', origin:'Việt Nam', spec:'D114mm, dày 4.5mm, TCVN 6117', qty:800, unit:'m', price:295000, doc:'CO/CQ, Packing list PL-0012', status:'Đã giao đủ'},
+      {id:itemId1, projectId:demoProjId, name:'Máy bơm ly tâm trục ngang', code:'PUMP-CN-050', system:'Hệ thống cơ khí', brand:'Grundfos', origin:'Đan Mạch', spec:'Q=50m3/h, H=32m, 3 pha, 380V, IP55', qty:4, unit:'bộ', price:38500000, doc:'CO/CQ, Invoice INV-0021', status:'Đang giao hàng', importStatus:'Kho SG'},
+      {id:itemId2, projectId:demoProjId, name:'Ống thép mạ kẽm D114', code:'PIPE-GS-114', system:'Hệ thống cấp thoát nước', brand:'Hoa Sen', origin:'Việt Nam', spec:'D114mm, dày 4.5mm, TCVN 6117', qty:800, unit:'m', price:295000, doc:'CO/CQ, Packing list PL-0012', status:'Đã giao đủ', importStatus:'Kho SG'},
     ],
     poBatches: [
       {id:uid('po'), itemId:itemId1, poCode:'PO-2026-014', date:'2026-05-10', qty:4},
@@ -716,7 +725,7 @@ if(!state.sheetsConfig.webAppUrl){
 if(!state.permissions) state.permissions = defaultPermissions();
 if(!state.payments) state.payments = [];
 state.projects.forEach(p=>{ if(p.system===undefined) p.system=''; if(p.progress===undefined) p.progress='Chưa khởi công'; if(p.progressPct===undefined) p.progressPct=0; });
-state.items.forEach(i=>{ if(i.system===undefined) i.system=''; if(i.brand===undefined) i.brand=''; if(i.origin===undefined) i.origin=''; });
+state.items.forEach(i=>{ if(i.system===undefined) i.system=''; if(i.brand===undefined) i.brand=''; if(i.origin===undefined) i.origin=''; if(i.importStatus===undefined) i.importStatus='Chờ duyệt'; });
 
 /* ================= PERMISSIONS ================= */
 function currentUser(){ return state.users.find(u => u.id === state.session.userId); }
@@ -777,6 +786,11 @@ function statusStampClass(status){
 }
 function projStatusStampClass(status){
   const map = {'Đang triển khai':'stamp-blue','Tạm dừng':'stamp-amber','Hoàn thành':'stamp-green','Đã hủy':'stamp-red'};
+  return map[status] || 'stamp-grey';
+}
+const IMPORT_STATUS_OPTIONS = ['Chờ duyệt','Đang load hàng','Kho SG','Kho HN','Ngưng nhập'];
+function importStatusStampClass(status){
+  const map = {'Chờ duyệt':'stamp-amber','Đang load hàng':'stamp-blue','Kho SG':'stamp-green','Kho HN':'stamp-green','Ngưng nhập':'stamp-red'};
   return map[status] || 'stamp-grey';
 }
 function toast(msg, isError){
@@ -1047,6 +1061,7 @@ function renderItemsTable(){
           <th>Tiến độ giao hàng</th>
           <th class="num">SL còn lại</th>
           <th>Tình trạng T&amp;C</th>
+          <th>Tiến độ nhập hàng</th>
           <th>Chứng từ</th>
           <th></th>
         </tr>
@@ -1086,6 +1101,7 @@ function rowHtml(it, stt){
       </td>
       <td class="num">${fmtNum(remaining)}</td>
       <td><span class="stamp ${statusStampClass(it.status)}">${it.status}</span></td>
+      <td><span class="stamp ${importStatusStampClass(it.importStatus)}">${it.importStatus||'Chờ duyệt'}</span></td>
       <td style="max-width:140px; font-size:11.5px; color:var(--ink-600);">${it.doc||'—'}</td>
       <td>
         <div class="row-actions">
@@ -1169,7 +1185,7 @@ function openItemModal(id, projectId){
   if(!can('manageItems')){ toast('Bạn không có quyền thao tác hàng hóa.', true); return; }
   const isEdit = !!id;
   document.getElementById('itemModalTitle').textContent = isEdit ? 'Sửa hàng hóa' : 'Hàng hóa mới';
-  const it = isEdit ? state.items.find(x=>x.id===id) : {id:'',projectId:projectId||state.ui.currentProjectId,name:'',code:'',system:'',brand:'',origin:'',spec:'',qty:0,unit:'',price:0,doc:'',status:'Chưa triển khai'};
+  const it = isEdit ? state.items.find(x=>x.id===id) : {id:'',projectId:projectId||state.ui.currentProjectId,name:'',code:'',system:'',brand:'',origin:'',spec:'',qty:0,unit:'',price:0,doc:'',status:'Chưa triển khai',importStatus:'Chờ duyệt'};
   document.getElementById('itId').value = it.id;
   document.getElementById('itId').dataset.projectId = it.projectId;
   document.getElementById('itName').value = it.name;
@@ -1183,6 +1199,7 @@ function openItemModal(id, projectId){
   document.getElementById('itPrice').value = it.price;
   document.getElementById('itDoc').value = it.doc;
   document.getElementById('itStatus').value = it.status;
+  document.getElementById('itImportStatus').value = it.importStatus||'Chờ duyệt';
   recalcItemTotal();
 
   const financeLocked = !can('editFinance');
@@ -1210,6 +1227,7 @@ function saveItem(){
     qty: Number(document.getElementById('itQty').value)||0,
     unit: document.getElementById('itUnit').value.trim(),
     status: document.getElementById('itStatus').value,
+    importStatus: document.getElementById('itImportStatus').value,
   };
   if(can('editFinance')){
     payload.price = Number(document.getElementById('itPrice').value)||0;
@@ -1331,13 +1349,13 @@ function removeDelivery(id){
 }
 
 /* ================= IMPORT FROM EXCEL ================= */
-const IMPORT_HEADERS = ['Tên sản phẩm','Hệ thống','Thương hiệu','Xuất xứ','Mã hàng','Thông số kỹ thuật','Số lượng','Đơn vị tính','Đơn giá','Chứng từ cung cấp','Tình trạng T&C'];
+const IMPORT_HEADERS = ['Tên sản phẩm','Hệ thống','Thương hiệu','Xuất xứ','Mã hàng','Thông số kỹ thuật','Số lượng','Đơn vị tính','Đơn giá','Chứng từ cung cấp','Tình trạng T&C','Tiến độ nhập hàng'];
 let importParsedRows = [];
 
 function downloadImportTemplate(){
   const ws = XLSX.utils.aoa_to_sheet([
     IMPORT_HEADERS,
-    ['Máy bơm ly tâm trục ngang','Hệ thống cơ khí','Grundfos','Đan Mạch','PUMP-CN-050','Q=50m3/h, H=32m, 3 pha, 380V','4','bộ','38500000','CO/CQ, Invoice INV-0021','Đang giao hàng'],
+    ['Máy bơm ly tâm trục ngang','Hệ thống cơ khí','Grundfos','Đan Mạch','PUMP-CN-050','Q=50m3/h, H=32m, 3 pha, 380V','4','bộ','38500000','CO/CQ, Invoice INV-0021','Đang giao hàng','Chờ duyệt'],
   ]);
   ws['!cols'] = IMPORT_HEADERS.map(()=>({wch:22}));
   const wb = XLSX.utils.book_new();
@@ -1414,6 +1432,7 @@ function confirmImport(){
   const financeAllowed = can('editFinance');
   importParsedRows.forEach(r=>{
     const status = ITEM_STATUS_OPTIONS.includes(r['Tình trạng T&C']) ? r['Tình trạng T&C'] : 'Chưa triển khai';
+    const importStatus = IMPORT_STATUS_OPTIONS.includes(r['Tiến độ nhập hàng']) ? r['Tiến độ nhập hàng'] : 'Chờ duyệt';
     state.items.push({
       id: uid('it'),
       projectId,
@@ -1428,6 +1447,7 @@ function confirmImport(){
       price: financeAllowed ? (Number(r['Đơn giá'])||0) : 0,
       doc: financeAllowed ? String(r['Chứng từ cung cấp']||'').trim() : '',
       status,
+      importStatus,
     });
   });
   saveState();
