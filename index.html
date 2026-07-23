@@ -461,6 +461,42 @@
   </div>
 </div>
 
+<!-- DELIVERY LIST / FILTER / EXPORT MODAL -->
+<div class="overlay" id="deliveryListModal">
+  <div class="modal wide" style="max-width:960px;">
+    <div class="modal-head">
+      <h2>Các đợt giao hàng</h2>
+      <button class="modal-close" onclick="closeModal('deliveryListModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="dlProjectId">
+      <div class="filter-bar" style="margin-bottom:14px;">
+        <div class="field" style="min-width:200px;">
+          <label>Tìm kiếm</label>
+          <input id="dlSearch" placeholder="Tên sản phẩm / mã hàng / tên đợt..." oninput="onDeliveryListFilterChange()">
+        </div>
+        <div class="field" style="min-width:170px;">
+          <label>Hệ thống</label>
+          <select id="dlSystem" onchange="onDeliveryListFilterChange()"><option value="">Tất cả hệ thống</option></select>
+        </div>
+        <div class="field" style="min-width:150px;">
+          <label>Từ ngày</label>
+          <input type="date" id="dlDateFrom" onchange="onDeliveryListFilterChange()">
+        </div>
+        <div class="field" style="min-width:150px;">
+          <label>Đến ngày</label>
+          <input type="date" id="dlDateTo" onchange="onDeliveryListFilterChange()">
+        </div>
+        <button class="btn btn-ghost btn-sm" style="align-self:flex-end;" onclick="clearDeliveryListFilters()">Xóa lọc</button>
+        <button class="btn btn-primary btn-sm" style="align-self:flex-end;" onclick="exportDeliveryExcel()">⇩ Xuất Excel</button>
+      </div>
+      <div class="stat-row" id="dlStats"></div>
+      <div id="dlTableWrap"></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal('deliveryListModal')">Đóng</button></div>
+  </div>
+</div>
+
 <!-- PAYMENT MODAL -->
 <div class="overlay" id="paymentModal">
   <div class="modal wide">
@@ -868,6 +904,7 @@ function renderMain(){
         ${can('manageProjects') ? `<button class="btn btn-ghost btn-sm" onclick="openProjectModal('${proj.id}')">Sửa dự án</button>` : ''}
         ${can('deleteProjects') ? `<button class="btn btn-danger btn-sm" onclick="deleteProject('${proj.id}')">Xóa dự án</button>` : ''}
         ${can('manageDeliveries') ? `<button class="btn btn-ghost btn-sm" onclick="openDeliveryUpdateModal('${proj.id}')">🚚 Cập nhật giao hàng</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="openDeliveryListModal('${proj.id}')">📦 Đợt giao hàng</button>
         ${can('manageItems') ? `<button class="btn btn-ghost btn-sm" onclick="openImportModal('${proj.id}')">⇪ Nhập từ Excel</button>` : ''}
         ${can('manageItems') ? `<button class="btn btn-primary btn-sm" onclick="openItemModal(null,'${proj.id}')">+ Thêm hàng hóa</button>` : ''}
       </div>
@@ -1448,6 +1485,110 @@ function submitDeliveryUpdate(){
   closeModal('deliveryUpdateModal');
   renderMain();
   toast(`Đã cập nhật giao hàng cho ${count} hàng hóa.`);
+}
+
+/* ================= DELIVERY LIST / FILTER / EXPORT ================= */
+let deliveryListProjectId = null;
+if(!state.ui.deliveryListFilters) state.ui.deliveryListFilters = {search:'', system:'', dateFrom:'', dateTo:''};
+
+function openDeliveryListModal(projectId){
+  deliveryListProjectId = projectId;
+  document.getElementById('dlProjectId').value = projectId;
+  const f = state.ui.deliveryListFilters;
+  document.getElementById('dlSearch').value = f.search || '';
+  document.getElementById('dlDateFrom').value = f.dateFrom || '';
+  document.getElementById('dlDateTo').value = f.dateTo || '';
+  const items = state.items.filter(i=>i.projectId===projectId);
+  const systems = distinctItemSystems(items);
+  document.getElementById('dlSystem').innerHTML = `<option value="">Tất cả hệ thống</option>` +
+    systems.map(s=>`<option value="${s}" ${f.system===s?'selected':''}>${s}</option>`).join('');
+  renderDeliveryListModal();
+  openModal('deliveryListModal');
+}
+function onDeliveryListFilterChange(){
+  state.ui.deliveryListFilters = {
+    search: document.getElementById('dlSearch').value,
+    system: document.getElementById('dlSystem').value,
+    dateFrom: document.getElementById('dlDateFrom').value,
+    dateTo: document.getElementById('dlDateTo').value,
+  };
+  saveState();
+  renderDeliveryListModal();
+}
+function clearDeliveryListFilters(){
+  state.ui.deliveryListFilters = {search:'', system:'', dateFrom:'', dateTo:''};
+  saveState();
+  openDeliveryListModal(deliveryListProjectId);
+}
+function getDeliveryListRows(){
+  const items = state.items.filter(i=>i.projectId===deliveryListProjectId);
+  const itemMap = {}; items.forEach(i=>itemMap[i.id]=i);
+  const f = state.ui.deliveryListFilters || {search:'', system:'', dateFrom:'', dateTo:''};
+  const q = (f.search||'').trim().toLowerCase();
+  return state.deliveries
+    .filter(d => itemMap[d.itemId])
+    .map(d => ({d, it: itemMap[d.itemId]}))
+    .filter(({d, it}) => {
+      if(q && !((it.name+it.code+d.batchNo).toLowerCase().includes(q))) return false;
+      if(f.system && (it.system||'') !== f.system) return false;
+      if(f.dateFrom && d.date && d.date < f.dateFrom) return false;
+      if(f.dateTo && d.date && d.date > f.dateTo) return false;
+      if((f.dateFrom || f.dateTo) && !d.date) return false;
+      return true;
+    })
+    .sort((a,b) => (a.d.date||'').localeCompare(b.d.date||''));
+}
+function renderDeliveryListModal(){
+  const rows = getDeliveryListRows();
+  const totalQty = sum(rows, r=>r.d.qty);
+  const totalValue = sum(rows, r=>r.d.qty * r.it.price);
+  document.getElementById('dlStats').innerHTML = `
+    <div class="stat-card"><div class="lbl">Số đợt giao</div><div class="val">${rows.length}</div></div>
+    <div class="stat-card"><div class="lbl">Tổng SL đã giao (theo lọc)</div><div class="val">${fmtNum(totalQty)}</div></div>
+    <div class="stat-card"><div class="lbl">Tổng giá trị (theo lọc)</div><div class="val">${fmtMoney(totalValue)}</div></div>
+  `;
+  const wrap = document.getElementById('dlTableWrap');
+  if(rows.length === 0){
+    wrap.innerHTML = `<div class="empty-state" style="margin-top:16px;"><h3>Không có đợt giao hàng nào khớp bộ lọc</h3><p>Thử điều chỉnh từ khóa, hệ thống hoặc khoảng ngày.</p></div>`;
+    return;
+  }
+  wrap.innerHTML = `
+    <table class="mini-table">
+      <thead><tr><th style="width:36px;">STT</th><th>Sản phẩm</th><th>Hệ thống</th><th>Đợt giao</th><th>Ngày giao</th><th class="num">SL giao</th><th class="num">Giá trị (VNĐ)</th><th>Ghi chú</th></tr></thead>
+      <tbody>
+        ${rows.map(({d,it}, idx) => `
+          <tr>
+            <td class="center mono">${idx+1}</td>
+            <td>${it.name}<div class="row-code">${it.code||''}</div></td>
+            <td>${it.system||'—'}</td>
+            <td>${d.batchNo||'—'}</td>
+            <td>${d.date||'—'}</td>
+            <td class="num">${fmtNum(d.qty)} ${it.unit||''}</td>
+            <td class="num">${fmtMoney(d.qty * it.price)}</td>
+            <td>${d.note||''}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+function exportDeliveryExcel(){
+  const rows = getDeliveryListRows();
+  if(rows.length === 0){ toast('Không có dữ liệu đợt giao hàng để xuất.', true); return; }
+  const proj = state.projects.find(p=>p.id===deliveryListProjectId);
+  const aoa = [
+    ['STT','Sản phẩm','Mã hàng','Hệ thống','Đợt giao','Ngày giao','SL giao','Đơn vị','Đơn giá','Giá trị giao (VNĐ)','Ghi chú']
+  ];
+  rows.forEach(({d,it}, idx)=>{
+    aoa.push([idx+1, it.name, it.code||'', it.system||'', d.batchNo||'', d.date||'', d.qty, it.unit||'', it.price, d.qty*it.price, d.note||'']);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = aoa[0].map(()=>({wch:18}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Dot giao hang');
+  const fileName = `dot-giao-hang${proj ? '-'+proj.code.replace(/[^\w-]/g,'') : ''}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+  toast('Đã xuất file Excel đợt giao hàng.');
 }
 
 /* ================= PAYMENT MANAGEMENT (per project) ================= */
