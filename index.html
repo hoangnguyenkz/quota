@@ -895,7 +895,7 @@ function renderMain(){
   const items = state.items.filter(i=>i.projectId===proj.id);
   const totalContractValue = sum(items, i=>i.qty*i.price);
   const totalDeliveredValue = sum(items, i=>itemDeliveredValue(i.id, i.price));
-  const totalRemainingQty = sum(items, i=>Math.max(i.qty - itemDeliveredQty(i.id), 0));
+  const totalRemainingQty = sum(items, i=>itemDeliveredQty(i.id) - itemPOTotal(i.id));
   const paidTotal = projectPaidTotal(proj.id);
   const remainingUnpaid = totalDeliveredValue - paidTotal;
 
@@ -1077,7 +1077,7 @@ function rowHtml(it, stt){
   const total = it.qty * it.price;
   const poQty = itemPOTotal(it.id);
   const delivered = itemDeliveredQty(it.id);
-  const remaining = Math.max(it.qty - delivered, 0);
+  const remaining = delivered - poQty;
   const pct = it.qty > 0 ? Math.min((delivered/it.qty)*100, 100) : 0;
   const over = delivered > it.qty;
   return `
@@ -1269,7 +1269,7 @@ function renderDetailModal(){
 
   const poQty = itemPOTotal(it.id);
   const delivered = itemDeliveredQty(it.id);
-  const remaining = Math.max(it.qty - delivered, 0);
+  const remaining = delivered - poQty;
   const deliveredValue = itemDeliveredValue(it.id, it.price);
 
   document.getElementById('detailStats').innerHTML = `
@@ -1468,7 +1468,8 @@ function openDeliveryUpdateModal(projectId){
   document.getElementById('dvUpdNote').value = '';
   document.getElementById('dvUpdTableBody').innerHTML = items.map(it=>{
     const delivered = itemDeliveredQty(it.id);
-    const remaining = Math.max(it.qty - delivered, 0);
+    const poQty = itemPOTotal(it.id);
+    const remaining = delivered - poQty;
     return `
       <tr>
         <td class="center"><input type="checkbox" class="dvUpdCheck" data-item="${it.id}"></td>
