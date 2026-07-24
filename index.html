@@ -637,13 +637,13 @@
     <div class="modal-head"><h2>Đồng bộ với Google Sheets</h2><button class="modal-close" onclick="closeModal('syncModal')">✕</button></div>
     <div class="modal-body">
       <p style="font-size:13px; color:var(--ink-600); line-height:1.6;">Ứng dụng lưu dữ liệu ngay trên trình duyệt. Để chia sẻ dữ liệu cho nhiều người cùng dùng, kết nối với 1 Google Sheet thông qua Google Apps Script (miễn phí, không cần server riêng).</p>
-      <div class="subhead">Bước 1 — Tạo backend trên Google Sheets</div>
+      <div class="subhead">Bước 1 — Tạo / nâng cấp backend trên Google Sheets</div>
       <p style="font-size:12.5px; color:var(--ink-600); line-height:1.7;">
-        1. Tạo 1 Google Sheet mới.<br>
+        1. Tạo 1 Google Sheet mới (hoặc dùng Sheet đang kết nối sẵn).<br>
         2. Vào <b>Tiện ích mở rộng → Apps Script</b>.<br>
-        3. Xóa hết code mẫu, dán đoạn mã bên dưới (cũng có trong file "apps-script-backend.gs" đã được cung cấp kèm).<br>
-        4. Bấm <b>Triển khai → Triển khai mới → Web app</b>. Chọn "Thực thi với: Tôi", "Người có quyền truy cập: Bất kỳ ai".<br>
-        5. Sao chép URL Web App, dán vào ô bên dưới.
+        3. Xóa hết code cũ, dán đoạn mã bên dưới (cũng có trong file "apps-script-backend.gs" đã được cung cấp kèm) — bản này ghi dữ liệu theo lô (nhanh hơn) và merge theo từng bản ghi thay vì ghi đè toàn bộ.<br>
+        4. Nếu Sheet <b>đã từng triển khai trước đó</b>: vào <b>Triển khai → Quản lý lượt triển khai → biểu tượng bút chì → Phiên bản: Mới → Triển khai</b> để giữ nguyên URL cũ, không cần dán lại URL.<br>
+        5. Nếu triển khai lần đầu: <b>Triển khai → Triển khai mới → Web app</b>, chọn "Thực thi với: Tôi", "Người có quyền truy cập: Bất kỳ ai", rồi sao chép URL Web App dán vào ô bên dưới.
       </p>
       <div class="code-box" id="appsScriptCode"></div>
       <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="copyScript()">📋 Sao chép mã Apps Script</button>
@@ -700,6 +700,7 @@ function defaultState(){
     ],
     sheetsConfig: {webAppUrl:'https://script.google.com/macros/s/AKfycbxlrXd_BHAfZdoTiT3jjdBUyeOzymZFPZdIXrDURJCex0SFNLo8CRwBEPG-9NNhlAoIlg/exec', autoSync:false},
     permissions: defaultPermissions(),
+    deletedIds: {projects:[], items:[], poBatches:[], deliveries:[], payments:[], users:[]},
     session: {userId:null},
     ui: {currentProjectId:demoProjId}
   };
@@ -724,6 +725,13 @@ if(!state.sheetsConfig.webAppUrl){
 }
 if(!state.permissions) state.permissions = defaultPermissions();
 if(!state.payments) state.payments = [];
+if(!state.deletedIds) state.deletedIds = {projects:[], items:[], poBatches:[], deliveries:[], payments:[], users:[]};
+['projects','items','poBatches','deliveries','payments','users'].forEach(t=>{ if(!state.deletedIds[t]) state.deletedIds[t] = []; });
+function markDeleted(table, id){
+  if(!state.deletedIds[table]) state.deletedIds[table] = [];
+  if(!state.deletedIds[table].includes(id)) state.deletedIds[table].push(id);
+}
+function touch(record){ record.updatedAt = Date.now(); return record; }
 state.projects.forEach(p=>{ if(p.system===undefined) p.system=''; if(p.progress===undefined) p.progress='Chưa khởi công'; if(p.progressPct===undefined) p.progressPct=0; });
 state.items.forEach(i=>{ if(i.system===undefined) i.system=''; if(i.brand===undefined) i.brand=''; if(i.origin===undefined) i.origin=''; if(i.importStatus===undefined) i.importStatus='Chờ duyệt'; });
 
@@ -1148,8 +1156,9 @@ function saveProject(){
   if(id){
     const p = state.projects.find(x=>x.id===id);
     Object.assign(p, common);
+    touch(p);
   } else {
-    const newP = Object.assign({id:uid('pj')}, common);
+    const newP = touch(Object.assign({id:uid('pj')}, common));
     state.projects.push(newP);
     state.ui.currentProjectId = newP.id;
   }
@@ -1163,6 +1172,11 @@ function deleteProject(id){
   if(!can('deleteProjects')){ toast('Bạn không có quyền xóa dự án.', true); return; }
   if(!confirm('Xóa dự án sẽ xóa toàn bộ hàng hóa, PO và đợt giao hàng liên quan. Tiếp tục?')) return;
   const itemIds = state.items.filter(i=>i.projectId===id).map(i=>i.id);
+  state.poBatches.filter(p=>itemIds.includes(p.itemId)).forEach(p=>markDeleted('poBatches', p.id));
+  state.deliveries.filter(d=>itemIds.includes(d.itemId)).forEach(d=>markDeleted('deliveries', d.id));
+  state.payments.filter(p=>p.projectId===id).forEach(p=>markDeleted('payments', p.id));
+  itemIds.forEach(iid=>markDeleted('items', iid));
+  markDeleted('projects', id);
   state.items = state.items.filter(i=>i.projectId!==id);
   state.poBatches = state.poBatches.filter(p=>!itemIds.includes(p.itemId));
   state.deliveries = state.deliveries.filter(d=>!itemIds.includes(d.itemId));
@@ -1234,9 +1248,9 @@ function saveItem(){
     payload.doc = document.getElementById('itDoc').value.trim();
   }
   if(id){
-    Object.assign(state.items.find(x=>x.id===id), payload);
+    touch(Object.assign(state.items.find(x=>x.id===id), payload));
   } else {
-    state.items.push(Object.assign({id:uid('it'), projectId, price:0, doc:''}, payload));
+    state.items.push(touch(Object.assign({id:uid('it'), projectId, price:0, doc:''}, payload)));
   }
   saveState();
   closeModal('itemModal');
@@ -1246,6 +1260,9 @@ function saveItem(){
 function deleteItem(id){
   if(!can('deleteItems')){ toast('Bạn không có quyền xóa hàng hóa.', true); return; }
   if(!confirm('Xóa hàng hóa này và toàn bộ PO / đợt giao hàng liên quan?')) return;
+  state.poBatches.filter(p=>p.itemId===id).forEach(p=>markDeleted('poBatches', p.id));
+  state.deliveries.filter(d=>d.itemId===id).forEach(d=>markDeleted('deliveries', d.id));
+  markDeleted('items', id);
   state.poBatches = state.poBatches.filter(p=>p.itemId!==id);
   state.deliveries = state.deliveries.filter(d=>d.itemId!==id);
   state.items = state.items.filter(i=>i.id!==id);
@@ -1312,7 +1329,7 @@ function addPO(){
   const date = document.getElementById('poDate').value;
   const qty = Number(document.getElementById('poQty').value)||0;
   if(!poCode || qty<=0){ toast('Vui lòng nhập số PO và số lượng hợp lệ.', true); return; }
-  state.poBatches.push({id:uid('po'), itemId:detailItemId, poCode, date, qty});
+  state.poBatches.push(touch({id:uid('po'), itemId:detailItemId, poCode, date, qty}));
   document.getElementById('poCode').value=''; document.getElementById('poDate').value=''; document.getElementById('poQty').value='';
   saveState();
   renderDetailModal();
@@ -1321,6 +1338,7 @@ function addPO(){
 }
 function removePO(id){
   if(!can('managePO')) return;
+  markDeleted('poBatches', id);
   state.poBatches = state.poBatches.filter(p=>p.id!==id);
   saveState();
   renderDetailModal();
@@ -1333,7 +1351,7 @@ function addDelivery(){
   const qty = Number(document.getElementById('dvQty').value)||0;
   const note = document.getElementById('dvNote').value.trim();
   if(!batchNo || qty<=0){ toast('Vui lòng nhập tên đợt giao và số lượng hợp lệ.', true); return; }
-  state.deliveries.push({id:uid('dv'), itemId:detailItemId, batchNo, date, qty, note});
+  state.deliveries.push(touch({id:uid('dv'), itemId:detailItemId, batchNo, date, qty, note}));
   document.getElementById('dvBatch').value=''; document.getElementById('dvDate').value=''; document.getElementById('dvQty').value=''; document.getElementById('dvNote').value='';
   saveState();
   renderDetailModal();
@@ -1342,6 +1360,7 @@ function addDelivery(){
 }
 function removeDelivery(id){
   if(!can('manageDeliveries')) return;
+  markDeleted('deliveries', id);
   state.deliveries = state.deliveries.filter(d=>d.id!==id);
   saveState();
   renderDetailModal();
@@ -1433,7 +1452,7 @@ function confirmImport(){
   importParsedRows.forEach(r=>{
     const status = ITEM_STATUS_OPTIONS.includes(r['Tình trạng T&C']) ? r['Tình trạng T&C'] : 'Chưa triển khai';
     const importStatus = IMPORT_STATUS_OPTIONS.includes(r['Tiến độ nhập hàng']) ? r['Tiến độ nhập hàng'] : 'Chờ duyệt';
-    state.items.push({
+    state.items.push(touch({
       id: uid('it'),
       projectId,
       name: String(r['Tên sản phẩm']||'').trim(),
@@ -1448,7 +1467,7 @@ function confirmImport(){
       doc: financeAllowed ? String(r['Chứng từ cung cấp']||'').trim() : '',
       status,
       importStatus,
-    });
+    }));
   });
   saveState();
   closeModal('importModal');
@@ -1497,7 +1516,7 @@ function submitDeliveryUpdate(){
     const qty = Number(tr.querySelector('.dvUpdQty').value) || 0;
     const itemId = tr.querySelector('.dvUpdCheck').dataset.item;
     if(checked && qty > 0){
-      state.deliveries.push({id:uid('dv'), itemId, batchNo, date, qty, note});
+      state.deliveries.push(touch({id:uid('dv'), itemId, batchNo, date, qty, note}));
       count++;
     }
   });
@@ -1658,7 +1677,7 @@ function addPayment(){
   const amount = Number(document.getElementById('pmAmount').value)||0;
   const note = document.getElementById('pmNote').value.trim();
   if(!batchNo || amount<=0){ toast('Vui lòng nhập tên đợt thanh toán và giá trị hợp lệ.', true); return; }
-  state.payments.push({id:uid('pm'), projectId:paymentProjectId, batchNo, date, amount, note});
+  state.payments.push(touch({id:uid('pm'), projectId:paymentProjectId, batchNo, date, amount, note}));
   document.getElementById('pmBatch').value=''; document.getElementById('pmDate').value=''; document.getElementById('pmAmount').value=''; document.getElementById('pmNote').value='';
   saveState();
   renderPaymentModal();
@@ -1667,6 +1686,7 @@ function addPayment(){
 }
 function removePayment(id){
   if(!can('managePayments')) return;
+  markDeleted('payments', id);
   state.payments = state.payments.filter(p=>p.id!==id);
   saveState();
   renderPaymentModal();
@@ -1736,7 +1756,7 @@ function addUser(){
   const role = document.getElementById('usrRole').value;
   if(!name || !username || !password){ toast('Vui lòng nhập đầy đủ thông tin người dùng.', true); return; }
   if(state.users.some(u=>u.username===username)){ toast('Tài khoản đã tồn tại.', true); return; }
-  state.users.push({id:uid('u'), name, username, password, role});
+  state.users.push(touch({id:uid('u'), name, username, password, role}));
   document.getElementById('usrName').value=''; document.getElementById('usrUsername').value=''; document.getElementById('usrPassword').value='';
   saveState();
   renderUsersTable();
@@ -1745,18 +1765,22 @@ function addUser(){
 function removeUser(id){
   if(id === state.session.userId){ toast('Không thể xóa tài khoản đang đăng nhập.', true); return; }
   if(!confirm('Xóa người dùng này?')) return;
+  markDeleted('users', id);
   state.users = state.users.filter(u=>u.id!==id);
   saveState();
   renderUsersTable();
 }
 
 /* ================= GOOGLE SHEETS SYNC ================= */
-const APPS_SCRIPT_CODE = `function doGet(e) {
+const APPS_SCRIPT_CODE = `var TABLES = ['projects','items','poBatches','deliveries','payments','users'];
+
+function doGet(e) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var out = {};
-  ['projects','items','poBatches','deliveries','payments','users'].forEach(function(name){
+  TABLES.forEach(function(name){
     out[name] = readSheet(ss, name);
   });
+  out.deletedIds = readDeletedIds(ss);
   return ContentService.createTextOutput(JSON.stringify(out))
     .setMimeType(ContentService.MimeType.JSON);
 }
@@ -1764,11 +1788,71 @@ const APPS_SCRIPT_CODE = `function doGet(e) {
 function doPost(e) {
   var body = JSON.parse(e.postData.contents);
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  ['projects','items','poBatches','deliveries','payments','users'].forEach(function(name){
-    if (body[name]) writeSheet(ss, name, body[name]);
+  var deletedMap = mergeDeletedIds(ss, body.deletedIds || {});
+
+  TABLES.forEach(function(name){
+    if (!body[name]) return;
+    var existing = readSheet(ss, name);
+    var map = {};
+    existing.forEach(function(row){ if (row.id) map[row.id] = row; });
+    (deletedMap[name] || []).forEach(function(id){ delete map[id]; });
+    body[name].forEach(function(row){
+      if (!row.id) return;
+      var cur = map[row.id];
+      var incomingTs = Number(row.updatedAt) || 0;
+      var curTs = cur ? (Number(cur.updatedAt) || 0) : -1;
+      if (!cur || incomingTs >= curTs) map[row.id] = row;
+    });
+    (deletedMap[name] || []).forEach(function(id){ delete map[id]; });
+    var merged = Object.keys(map).map(function(k){ return map[k]; });
+    writeSheet(ss, name, merged);
   });
+
   return ContentService.createTextOutput(JSON.stringify({ok:true}))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function mergeDeletedIds(ss, incoming){
+  var sheet = ss.getSheetByName('_deleted');
+  if (!sheet) sheet = ss.insertSheet('_deleted');
+  var existingRows = sheet.getLastRow() > 1 ? sheet.getDataRange().getValues().slice(1) : [];
+  var set = {};
+  existingRows.forEach(function(r){ set[r[0] + '|' + r[1]] = r[2]; });
+  Object.keys(incoming).forEach(function(table){
+    (incoming[table] || []).forEach(function(id){
+      var key = table + '|' + id;
+      if (!set[key]) set[key] = Date.now();
+    });
+  });
+  var rows = [['table','id','deletedAt']];
+  Object.keys(set).forEach(function(key){
+    var parts = key.split('|');
+    rows.push([parts[0], parts[1], set[key]]);
+  });
+  sheet.clear();
+  sheet.getRange(1, 1, rows.length, 3).setValues(rows);
+
+  var out = {};
+  Object.keys(set).forEach(function(key){
+    var parts = key.split('|');
+    if (!out[parts[0]]) out[parts[0]] = [];
+    out[parts[0]].push(parts[1]);
+  });
+  return out;
+}
+
+function readDeletedIds(ss){
+  var sheet = ss.getSheetByName('_deleted');
+  if (!sheet || sheet.getLastRow() < 2) return {};
+  var rows = sheet.getDataRange().getValues();
+  rows.shift();
+  var out = {};
+  rows.forEach(function(r){
+    var table = r[0], id = String(r[1]);
+    if (!out[table]) out[table] = [];
+    out[table].push(id);
+  });
+  return out;
 }
 
 function readSheet(ss, name){
@@ -1788,11 +1872,14 @@ function writeSheet(ss, name, rows){
   if (!sheet) sheet = ss.insertSheet(name);
   sheet.clear();
   if (!rows.length) return;
-  var headers = Object.keys(rows[0]);
-  sheet.appendRow(headers);
+  var headerSet = {};
+  rows.forEach(function(row){ Object.keys(row).forEach(function(k){ headerSet[k] = true; }); });
+  var headers = Object.keys(headerSet);
+  var data = [headers];
   rows.forEach(function(row){
-    sheet.appendRow(headers.map(function(h){ return row[h]; }));
+    data.push(headers.map(function(h){ return row[h] !== undefined ? row[h] : ''; }));
   });
+  sheet.getRange(1, 1, data.length, headers.length).setValues(data);
 }`;
 
 let autoSyncTimer = null;
@@ -1865,11 +1952,15 @@ async function pushToSheets(silent){
   try{
     await fetch(url, {
       method:'POST',
+      headers: {'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify({
         projects: state.projects, items: state.items, poBatches: state.poBatches,
-        deliveries: state.deliveries, payments: state.payments, users: state.users
+        deliveries: state.deliveries, payments: state.payments, users: state.users,
+        deletedIds: state.deletedIds
       })
     });
+    state.deletedIds = {projects:[], items:[], poBatches:[], deliveries:[], payments:[], users:[]};
+    saveState();
     if(!silent) toast('Đã đẩy dữ liệu lên Google Sheets.');
   }catch(err){
     if(!silent) toast('Lỗi khi đẩy dữ liệu. Kiểm tra lại URL và quyền truy cập.', true);
